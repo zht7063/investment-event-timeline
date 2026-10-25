@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "browser-check",
+  "evidenceKind": "automated-browser",
+  "status": "fail",
+  "visualReview": "not-requested",
+  "provenance": "current",
+  "deliveryReceiptId": "4236a442-9e7d-4d49-a673-9a3672fc6e27",
+  "artifact": {
+    "path": "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+    "sha256": "3194a95f66dc968e6c02ea5ca9bff4336a89a3b0e02930ac1b018c0d1a94b259",
+    "bytes": 843854
+  },
+  "state": {
+    "detail": "read",
+    "motion": "still"
+  },
+  "chrome": {
+    "status": "available",
+    "executable": "/tmp/evt-browsers/chromium-1248/chrome-linux64/chrome"
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/browser-check-runtime",
+      "severity": "error",
+      "message": "browser-check could not complete its Chrome inspection.",
+      "subject": {
+        "artifact": "/root/projects/investment-event-timeline/docs/architecture/architecture.html"
+      },
+      "evidence": {
+        "reason": "Chrome DevTools write pipe failed: read ECONNRESET [ECONNRESET]\nChrome process: still running.\nChrome stderr:\n/tmp/evt-browsers/chromium-1248/chrome-linux64/chrome: error while loading shared libraries: libatk-1.0.so.0: cannot open shared object file: No such file or directory\nChrome transport: Node v24.13.0, libuv 1.51.0, linux; pid=71858, exitCode=null, signalCode=null.\nChrome read pipe: readable=true, ended=false, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=false, ended=false, destroyed=true, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+      },
+      "supportedFixes": [
+        "resolve the reported Chrome inspection error, then rerun browser-check"
+      ]
+    }
+  ],
+  "containment": {
+    "status": "fail",
+    "policy": "fit-or-reader-declared-readable-vertical-scroll",
+    "viewports": []
+  },
+  "themeStates": {
+    "status": "fail",
+    "viewports": []
+  },
+  "readability": {
+    "status": "fail",
+    "minimumProjectedNodeTextPx": 6,
+    "viewports": []
+  },
+  "viewerChrome": {
+    "status": "fail",
+    "viewports": []
+  },
+  "captures": {
+    "status": "not-requested",
+    "screenshots": [],
+    "contactSheet": null
+  },
+  "sidecars": {
+    "directory": "/root/projects/investment-event-timeline/docs/architecture/review-2",
+    "receipt": "architecture.browser-check.json",
+    "files": []
+  },
+  "error": "Chrome DevTools write pipe failed: read ECONNRESET [ECONNRESET]\nChrome process: still running.\nChrome stderr:\n/tmp/evt-browsers/chromium-1248/chrome-linux64/chrome: error while loading shared libraries: libatk-1.0.so.0: cannot open shared object file: No such file or directory\nChrome transport: Node v24.13.0, libuv 1.51.0, linux; pid=71858, exitCode=null, signalCode=null.\nChrome read pipe: readable=true, ended=false, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=false, ended=false, destroyed=true, completedWrites=1, writtenBytes=50, bufferedBytes=0."
+}

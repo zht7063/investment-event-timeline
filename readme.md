@@ -2,6 +2,8 @@
 
 输入 A 股代码和披露日期范围，自动检索真实公告与新闻，逐步整理事项、原文摘录和证据冲突；也支持人工导入及事件历史回看。
 
+访问地址：[timeline.tianyubai.cn](https://timeline.tianyubai.cn)。
+
 测试入口：[股票区间研究](https://timeline.tianyubai.cn/research) · [事件库](https://timeline.tianyubai.cn/events) · [资料库](https://timeline.tianyubai.cn/events?tab=materials)。最新功能、回填及部署验收见 [统一事件库与批量清除记录](docs/library-fix-2026-10-26.md)。
 
 发布镜像：[zht7063/investment-event-timeline](https://hub.docker.com/r/zht7063/investment-event-timeline)，提供 `latest` 和固定版本 `git-efaa6d6`，平台为 `linux/amd64`。
@@ -230,6 +232,7 @@ DATABASE_PATH=/tmp/rehearsal.db npm run library:backfill
 
 ## 文档
 
+- [项目架构文档与 Archify 架构图](docs/architecture.md)
 - [实施计划](docs/implementation-plan.md)
 - [AI 使用与验证记录](docs/ai-usage.md)
 - [测试说明](docs/testing.md)

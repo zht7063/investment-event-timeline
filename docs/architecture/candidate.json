@@ -1,0 +1,273 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "投资事件情报与证据时间线 · 系统架构",
+    "locale": "zh-CN",
+    "output": "docs/architecture/architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/zht7063/investment-event-timeline.git",
+      "revision": "ab0653da2d4dae76fc422edc59d7263fd449fb3d"
+    }
+  },
+  "components": [
+    {
+      "id": "browser",
+      "type": "frontend",
+      "label": "浏览器",
+      "sublabel": "研究 · 事件库 · 人工确认",
+      "pos": [
+        40,
+        40
+      ],
+      "size": [
+        190,
+        76
+      ],
+      "sources": [
+        {
+          "path": "src/app/research/ResearchForm.tsx",
+          "line": 24,
+          "end_line": 62
+        },
+        {
+          "path": "src/app/research/ResearchClient.tsx",
+          "line": 51,
+          "end_line": 86
+        },
+        {
+          "path": "src/app/events/page.tsx",
+          "line": 25,
+          "end_line": 55
+        }
+      ]
+    },
+    {
+      "id": "web",
+      "type": "backend",
+      "label": "Next.js Web",
+      "sublabel": "页面 / API / 人工证据服务",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        190,
+        76
+      ],
+      "sources": [
+        {
+          "path": "src/server/ingest.ts",
+          "line": 146,
+          "end_line": 163
+        },
+        {
+          "path": "src/server/ingest.ts",
+          "line": 181,
+          "end_line": 235
+        },
+        {
+          "path": "src/app/api/research/route.ts",
+          "line": 7,
+          "end_line": 37
+        }
+      ]
+    },
+    {
+      "id": "external",
+      "type": "external",
+      "label": "外部数据与模型接口",
+      "sublabel": "iFinD · 扶摇 · 兼容模型接口",
+      "pos": [
+        390,
+        40
+      ],
+      "size": [
+        190,
+        76
+      ],
+      "sources": [
+        {
+          "path": "src/server/research/providers.ts",
+          "line": 56,
+          "end_line": 81
+        },
+        {
+          "path": "src/server/sources/sync.ts",
+          "line": 49,
+          "end_line": 83
+        },
+        {
+          "path": "src/server/research/analysis.ts",
+          "line": 45,
+          "end_line": 76
+        }
+      ]
+    },
+    {
+      "id": "sync",
+      "type": "backend",
+      "label": "预设标的同步进程",
+      "sublabel": "定时抓取 / 待确认资料分析",
+      "pos": [
+        390,
+        260
+      ],
+      "size": [
+        190,
+        76
+      ],
+      "sources": [
+        {
+          "path": "scripts/sync-loop.mjs",
+          "line": 16,
+          "end_line": 25
+        },
+        {
+          "path": "src/server/sources/sync.ts",
+          "line": 106,
+          "end_line": 164
+        },
+        {
+          "path": "src/server/ai.ts",
+          "line": 113,
+          "end_line": 140
+        }
+      ]
+    },
+    {
+      "id": "worker",
+      "type": "backend",
+      "label": "自动研究 Worker",
+      "sublabel": "检索 → 抽取 → 关系核验",
+      "pos": [
+        740,
+        260
+      ],
+      "size": [
+        190,
+        76
+      ],
+      "sources": [
+        {
+          "path": "src/server/research/worker.ts",
+          "line": 245,
+          "end_line": 279
+        },
+        {
+          "path": "src/server/research/worker.ts",
+          "line": 303,
+          "end_line": 343
+        },
+        {
+          "path": "src/server/research/worker.ts",
+          "line": 349,
+          "end_line": 440
+        }
+      ]
+    },
+    {
+      "id": "sqlite",
+      "type": "database",
+      "label": "共享 SQLite / WAL",
+      "sublabel": "任务 · 证据 · 报告 · 事件索引",
+      "pos": [
+        390,
+        500
+      ],
+      "size": [
+        190,
+        76
+      ],
+      "sources": [
+        {
+          "path": "src/server/db.ts",
+          "line": 10,
+          "end_line": 43
+        },
+        {
+          "path": "src/server/research/store.ts",
+          "line": 98,
+          "end_line": 140
+        },
+        {
+          "path": "src/server/research/worker.ts",
+          "line": 93,
+          "end_line": 110
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "from": "browser",
+      "to": "web",
+      "label": "请求 / 轮询",
+      "variant": "emphasis",
+      "id": "edge-1"
+    },
+    {
+      "from": "web",
+      "to": "sqlite",
+      "label": "读写 / 创建任务",
+      "id": "edge-2"
+    },
+    {
+      "from": "worker",
+      "to": "sqlite",
+      "label": "租约领取 / 分步提交",
+      "id": "edge-3"
+    },
+    {
+      "from": "sync",
+      "to": "sqlite",
+      "label": "入库 / 同步记录",
+      "id": "edge-4"
+    },
+    {
+      "from": "web",
+      "to": "external",
+      "label": "抽取 / 手动同步 / 行情",
+      "id": "edge-5"
+    },
+    {
+      "from": "sync",
+      "to": "external",
+      "label": "抓取 / 抽取",
+      "id": "edge-6"
+    },
+    {
+      "from": "worker",
+      "to": "external",
+      "label": "标的核验 / 检索 / 分析",
+      "id": "edge-7"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "两条证据链",
+      "items": [
+        "人工链：导入或同步 → 摘录校验 → 人工确认 → 规则结论。",
+        "自动链：SQLite 任务 → worker → 区间报告与统一事件库；未经人工确认。"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "进程与持久化",
+      "items": [
+        "Compose 运行 web、sync、research 三个进程，共享 app-data 卷。",
+        "队列即 research_jobs 表；无独立消息服务。取消或删除使租约失效。"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "边界",
+      "items": [
+        "外部接口节点合并展示数据供应商与模型，正文仅为片段或摘要。",
+        "模型建议经程序校验；结论状态由领域规则计算。管理口令只保护指定操作。"
+      ]
+    }
+  ]
+}

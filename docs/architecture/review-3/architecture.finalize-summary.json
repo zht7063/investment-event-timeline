@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/root/projects/investment-event-timeline/docs/architecture/candidate.json",
+    "sha256": "42c1a0c8846dc1364677a369d932756b592943ca5ed83417d7b65cf87646aa97",
+    "bytes": 6006
+  },
+  "artifact": {
+    "path": "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+    "sha256": "3194a95f66dc968e6c02ea5ca9bff4336a89a3b0e02930ac1b018c0d1a94b259",
+    "bytes": 843854
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "fail"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/browser-check-runtime",
+      "severity": "error",
+      "message": "browser-check could not complete its Chrome inspection.",
+      "subject": {
+        "artifact": "/root/projects/investment-event-timeline/docs/architecture/architecture.html"
+      },
+      "evidence": {
+        "reason": "Chrome DevTools write pipe failed: write EPIPE [EPIPE]\nChrome process: still running.\nChrome transport: Node v24.13.0, libuv 1.51.0, linux; pid=71950, exitCode=null, signalCode=null.\nChrome read pipe: readable=true, ended=false, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=false, ended=false, destroyed=false, completedWrites=0, writtenBytes=0, bufferedBytes=0."
+      },
+      "supportedFixes": [
+        "resolve the reported Chrome inspection error, then rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/root/projects/investment-event-timeline/docs/architecture/review-3/architecture.finalize.json",
+    "summaryReceipt": "/root/projects/investment-event-timeline/docs/architecture/review-3/architecture.finalize-summary.json",
+    "browserCheckReceipt": "/root/projects/investment-event-timeline/docs/architecture/review-3/architecture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-25T19:24:58.420Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 6781,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  }
+}

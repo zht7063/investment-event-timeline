@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "26cd5476-66b0-4553-8d71-050677264139",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/root/projects/investment-event-timeline/docs/architecture/candidate.json",
+  "output": "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+  "specification": {
+    "sha256": "42c1a0c8846dc1364677a369d932756b592943ca5ed83417d7b65cf87646aa97",
+    "bytes": 6006
+  },
+  "artifact": {
+    "sha256": "3194a95f66dc968e6c02ea5ca9bff4336a89a3b0e02930ac1b018c0d1a94b259",
+    "bytes": 843854
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/root/projects/investment-event-timeline/docs/architecture/candidate.json",
+    "sha256": "42c1a0c8846dc1364677a369d932756b592943ca5ed83417d7b65cf87646aa97",
+    "bytes": 6006
+  },
+  "artifact": {
+    "path": "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+    "sha256": "3194a95f66dc968e6c02ea5ca9bff4336a89a3b0e02930ac1b018c0d1a94b259",
+    "bytes": 843854
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "skipped"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "No supported browser found. Install Chrome/Chromium (or Microsoft Edge), or set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/root/projects/investment-event-timeline/docs/architecture/architecture.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome/Chromium executable (or Microsoft Edge) and rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/root/projects/investment-event-timeline/docs/architecture/architecture.finalize.json",
+    "summaryReceipt": "/root/projects/investment-event-timeline/docs/architecture/architecture.finalize-summary.json",
+    "browserCheckReceipt": "/root/projects/investment-event-timeline/docs/architecture/architecture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-25T19:24:58.420Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 1118,
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  }
+}

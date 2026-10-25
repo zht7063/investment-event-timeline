@@ -1,0 +1,384 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "fail",
+  "type": "architecture",
+  "quality": "showcase",
+  "startedAt": "2026-10-25T19:28:29.144Z",
+  "specification": {
+    "path": "/root/projects/investment-event-timeline/docs/architecture/candidate.json",
+    "sha256": "42c1a0c8846dc1364677a369d932756b592943ca5ed83417d7b65cf87646aa97",
+    "bytes": 6006
+  },
+  "artifact": {
+    "path": "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+    "sha256": "3194a95f66dc968e6c02ea5ca9bff4336a89a3b0e02930ac1b018c0d1a94b259",
+    "bytes": 843854
+  },
+  "stages": {
+    "validate": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": null,
+      "execution": "embedded-in-deliver",
+      "command": [
+        "/tmp/node-v24.13.0-linux-x64/bin/node",
+        "/root/projects/investment-event-timeline/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/root/projects/investment-event-timeline/docs/architecture/candidate.json",
+        "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/root/projects/investment-event-timeline",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": true,
+        "command": "validate",
+        "specification": {
+          "sha256": "42c1a0c8846dc1364677a369d932756b592943ca5ed83417d7b65cf87646aa97",
+          "bytes": 6006
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        }
+      }
+    },
+    "deliver": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 598,
+      "command": [
+        "/tmp/node-v24.13.0-linux-x64/bin/node",
+        "/root/projects/investment-event-timeline/.agents/skills/archify/bin/archify.mjs",
+        "deliver",
+        "architecture",
+        "/root/projects/investment-event-timeline/docs/architecture/candidate.json",
+        "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+        "--quality",
+        "showcase",
+        "--repo-root",
+        "/root/projects/investment-event-timeline",
+        "--json"
+      ],
+      "receipt": {
+        "schemaVersion": 1,
+        "receiptId": "3a23f74a-3931-4e79-aefa-bae9da6fbde1",
+        "ok": true,
+        "command": "deliver",
+        "type": "architecture",
+        "input": "/root/projects/investment-event-timeline/docs/architecture/candidate.json",
+        "output": "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+        "specification": {
+          "sha256": "42c1a0c8846dc1364677a369d932756b592943ca5ed83417d7b65cf87646aa97",
+          "bytes": 6006
+        },
+        "artifact": {
+          "sha256": "3194a95f66dc968e6c02ea5ca9bff4336a89a3b0e02930ac1b018c0d1a94b259",
+          "bytes": 843854
+        },
+        "validation": {
+          "checksPassed": 9,
+          "checkCount": 9,
+          "compositionProfile": "showcase",
+          "compositionStatus": "pass",
+          "errors": 0,
+          "warnings": 0
+        },
+        "evidence": {
+          "verified": true,
+          "repository": "https://github.com/zht7063/investment-event-timeline",
+          "revision": "ab0653da2d4dae76fc422edc59d7263fd449fb3d",
+          "references": 18
+        },
+        "update": {
+          "status": "unavailable",
+          "installedVersion": null,
+          "availableVersion": null,
+          "releaseNotes": null,
+          "checkedAt": null,
+          "source": null,
+          "noticeRequired": false,
+          "noticeText": null,
+          "reason": "disabled"
+        }
+      }
+    },
+    "check": {
+      "status": "pass",
+      "exitCode": 0,
+      "durationMs": 228,
+      "command": [
+        "/tmp/node-v24.13.0-linux-x64/bin/node",
+        "/root/projects/investment-event-timeline/.agents/skills/archify/bin/archify.mjs",
+        "check",
+        "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+        "--require-provenance"
+      ],
+      "receipt": {
+        "ok": true,
+        "file": "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+        "artifact": {
+          "sha256": "3194a95f66dc968e6c02ea5ca9bff4336a89a3b0e02930ac1b018c0d1a94b259",
+          "bytes": 843854
+        },
+        "checks": [
+          {
+            "name": "single_svg",
+            "ok": true,
+            "details": [
+              "found 1 <svg> block(s)"
+            ]
+          },
+          {
+            "name": "finite_svg",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "orthogonal_arrows",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "label_route_clearance",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_crossings",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "relationship_corridors",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "container_border_runs",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "route_rhythm",
+            "ok": true,
+            "details": []
+          },
+          {
+            "name": "legend_clearance",
+            "ok": true,
+            "details": []
+          }
+        ],
+        "composition": {
+          "schemaVersion": 1,
+          "profile": "showcase",
+          "status": "pass",
+          "summary": {
+            "errors": 0,
+            "warnings": 0
+          },
+          "metrics": {
+            "properCrossings": 0,
+            "resolvedCrossovers": 0,
+            "ambiguousCorridors": 0,
+            "arrowheadCollisions": 0,
+            "containerBorderRuns": 0,
+            "labelRouteClearanceIssues": 0,
+            "labelCanvasOverflowIssues": 0,
+            "minLabelRouteClearance": 82,
+            "desktopReadabilityIssues": 0,
+            "viewportHeightIssues": 0,
+            "minProjectedNodeTextPx": 7.670103092783505,
+            "maxBends": 2,
+            "routesOverSuggestedBends": 0,
+            "maxStretch": 1,
+            "routesOverSuggestedStretch": 0,
+            "minSegmentPx": 80,
+            "minInteriorSegmentPx": 213,
+            "shortSegmentCount": 0,
+            "shortEndpointSegmentCount": 0,
+            "shortInteriorSegmentCount": 0,
+            "microSegmentCount": 0
+          },
+          "suggestedLimits": {
+            "bendsPerRelationship": 2,
+            "stretch": 1.35,
+            "segmentPx": 16,
+            "microSegmentPx": 8
+          },
+          "routeReview": {
+            "crossings": [],
+            "detours": []
+          },
+          "leadingSpace": {
+            "measured": true,
+            "emptyTopPx": 40,
+            "emptyTopRatio": 0.062,
+            "occupiedTop": 40,
+            "viewBoxTop": 0,
+            "canvasHeight": 644,
+            "typicalNodeHeight": 76,
+            "reviewSuggested": false
+          },
+          "desktopReadability": {
+            "budgetBasis": "legacy-930",
+            "readerContract": "declared-wide-v1",
+            "availableDiagramWidth": 930,
+            "actualBudgetPx": 930,
+            "limit": "legacy",
+            "requestedTargetPx": 7.5,
+            "requestedTargetMet": true,
+            "hardFloorPx": 6,
+            "hardFloorMet": true,
+            "minimumOwner": {
+              "kind": "edge",
+              "id": "edge-1",
+              "from": "browser",
+              "to": "web"
+            },
+            "minimumSourceTextPx": 8,
+            "minimumProjectedTextPx": 7.670103092783505,
+            "semanticTextCount": 19
+          },
+          "issues": []
+        },
+        "provenance": "current",
+        "deliveryReceiptId": "3a23f74a-3931-4e79-aefa-bae9da6fbde1"
+      }
+    },
+    "browser-check": {
+      "status": "fail",
+      "exitCode": 1,
+      "durationMs": 39,
+      "command": [
+        "/tmp/node-v24.13.0-linux-x64/bin/node",
+        "/root/projects/investment-event-timeline/.agents/skills/archify/bin/archify.mjs",
+        "browser-check",
+        "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+        "--json",
+        "--require-provenance",
+        "--out-dir",
+        "/root/projects/investment-event-timeline/docs/architecture/review-3"
+      ],
+      "execution": "in-process",
+      "receipt": {
+        "schemaVersion": 1,
+        "ok": false,
+        "command": "browser-check",
+        "evidenceKind": "automated-browser",
+        "status": "fail",
+        "visualReview": "not-requested",
+        "provenance": "current",
+        "deliveryReceiptId": "3a23f74a-3931-4e79-aefa-bae9da6fbde1",
+        "artifact": {
+          "path": "/root/projects/investment-event-timeline/docs/architecture/architecture.html",
+          "sha256": "3194a95f66dc968e6c02ea5ca9bff4336a89a3b0e02930ac1b018c0d1a94b259",
+          "bytes": 843854
+        },
+        "state": {
+          "detail": "read",
+          "motion": "still"
+        },
+        "chrome": {
+          "status": "available",
+          "executable": "/tmp/evt-browsers/chromium-1248/chrome-linux64/chrome"
+        },
+        "diagnostics": [
+          {
+            "code": "viewer/browser-check-runtime",
+            "severity": "error",
+            "message": "browser-check could not complete its Chrome inspection.",
+            "subject": {
+              "artifact": "/root/projects/investment-event-timeline/docs/architecture/architecture.html"
+            },
+            "evidence": {
+              "reason": "Chrome DevTools write pipe failed: write EPIPE [EPIPE]\nChrome process: still running.\nChrome transport: Node v24.13.0, libuv 1.51.0, linux; pid=71950, exitCode=null, signalCode=null.\nChrome read pipe: readable=true, ended=false, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=false, ended=false, destroyed=false, completedWrites=0, writtenBytes=0, bufferedBytes=0."
+            },
+            "supportedFixes": [
+              "resolve the reported Chrome inspection error, then rerun browser-check"
+            ]
+          }
+        ],
+        "containment": {
+          "status": "fail",
+          "policy": "fit-or-reader-declared-readable-vertical-scroll",
+          "viewports": []
+        },
+        "themeStates": {
+          "status": "fail",
+          "viewports": []
+        },
+        "readability": {
+          "status": "fail",
+          "minimumProjectedNodeTextPx": 6,
+          "viewports": []
+        },
+        "viewerChrome": {
+          "status": "fail",
+          "viewports": []
+        },
+        "captures": {
+          "status": "not-requested",
+          "screenshots": [],
+          "contactSheet": null
+        },
+        "sidecars": {
+          "directory": "/root/projects/investment-event-timeline/docs/architecture/review-3",
+          "receipt": "architecture.browser-check.json",
+          "files": []
+        },
+        "error": "Chrome DevTools write pipe failed: write EPIPE [EPIPE]\nChrome process: still running.\nChrome transport: Node v24.13.0, libuv 1.51.0, linux; pid=71950, exitCode=null, signalCode=null.\nChrome read pipe: readable=true, ended=false, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=false, ended=false, destroyed=false, completedWrites=0, writtenBytes=0, bufferedBytes=0."
+      }
+    }
+  },
+  "browserCheck": {
+    "requested": true,
+    "ran": false
+  },
+  "diagnostics": [
+    {
+      "code": "viewer/browser-check-runtime",
+      "severity": "error",
+      "message": "browser-check could not complete its Chrome inspection.",
+      "subject": {
+        "artifact": "/root/projects/investment-event-timeline/docs/architecture/architecture.html"
+      },
+      "evidence": {
+        "reason": "Chrome DevTools write pipe failed: write EPIPE [EPIPE]\nChrome process: still running.\nChrome transport: Node v24.13.0, libuv 1.51.0, linux; pid=71950, exitCode=null, signalCode=null.\nChrome read pipe: readable=true, ended=false, destroyed=false, receivedBytes=0, messages=0, bufferedBytes=0.\nChrome write pipe: writable=false, ended=false, destroyed=false, completedWrites=0, writtenBytes=0, bufferedBytes=0."
+      },
+      "supportedFixes": [
+        "resolve the reported Chrome inspection error, then rerun browser-check"
+      ]
+    }
+  ],
+  "evidence": {
+    "receipt": "/root/projects/investment-event-timeline/docs/architecture/review-3/architecture.finalize.json",
+    "summaryReceipt": "/root/projects/investment-event-timeline/docs/architecture/review-3/architecture.finalize-summary.json",
+    "browserCheckReceipt": "/root/projects/investment-event-timeline/docs/architecture/review-3/architecture.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "failedStage": "browser-check",
+  "finishedAt": "2026-10-25T19:28:35.925Z",
+  "durationMs": 6781,
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-25T19:24:58.420Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  }
+}
