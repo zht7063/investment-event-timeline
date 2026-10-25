@@ -1,0 +1,14 @@
+:root {
+  --ink: #1d1b16;
+  --paper: #f6f1e7;
+  --muted: #6b6457;
+  --line: #d8cfbd;
+  font-family: "Songti SC", "Noto Serif SC", serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+body {
+  margin: 0;
+  padding: 2rem;
+}
