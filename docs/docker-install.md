@@ -15,7 +15,7 @@ sudo systemctl enable --now docker
 把项目放到服务器目录，进入该目录：
 
 ```bash
-cp .local.env .env
+touch .env
 chmod 600 .env
 # 编辑 .env：填写 ADMIN_TOKEN、AI_* 及所需数据源凭证。
 # 需要自动同步时填写 SYNC_CODES，例如 300308.SZ。
@@ -100,31 +100,61 @@ curl --fail http://127.0.0.1:3000/api/health
 
 源码、Compose 配置与镜像版本应保持一致；运行凭证仅保存在服务器 `.env`，不得打入镜像。首次安装没有旧数据库或旧镜像时无需做旧版本备份，启动并验收后应验证一次在线备份。
 
-## 后续绑定域名
+## 绑定 timeline.tianyubai.cn（Caddy HTTPS）
 
-旧演示部署使用宿主机 Caddy 接收 80 端口请求，容器仅监听
-`127.0.0.1:3000`；新测试服务器当前直接提供 3000 端口，见 [部署记录](research-deployment-2026-10-26.md)。如果服务器已有透明代理，采用 Caddy 方式可避免 Docker
-直接公开端口与代理路由冲突。无域名时可先安装 HTTP 入口：
+访问路径：浏览器 → Cloudflare（当前已开启代理）→ 宿主机 Caddy 的 443 端口 → `127.0.0.1:3000` → web 容器。应用镜像无需修改。
+
+Cloudflare 开启代理时，公网 DNS 返回 Cloudflare 地址属正常现象；DNS 控制台的源站仍应填写 `185.115.207.143`。SSL/TLS 使用 Full (strict)，避免 Flexible 与源站 HTTPS 重定向形成循环。保留 HTTP ACME 验证路径可达，当前源站已通过 HTTP-01 获取公开可信证书。
+
+1. 在 DNS 控制台添加 A 记录：`timeline` → `185.115.207.143`。不要配置不可用的 AAAA 记录。
+2. 云防火墙及宿主机放行 TCP 80、443；UDP 443 可选，用于 HTTP/3。保留现有 SSH 端口。
+3. 安装 Caddy，备份数据库、`.env` 与现有 Caddy 配置；已有其他站点时合并本站配置，不覆盖它们。
 
 ```bash
+# Debian 11 默认源可能没有 Caddy，使用官方 stable 软件源
+sudo apt-get install -y debian-keyring debian-archive-keyring apt-transport-https gnupg curl
+curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key -o /tmp/caddy.gpg
+sudo gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg /tmp/caddy.gpg
+curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt -o /tmp/caddy-stable.list
+sudo install -m 644 /tmp/caddy-stable.list /etc/apt/sources.list.d/caddy-stable.list
+sudo chmod 644 /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+sudo apt-get update
 sudo apt-get install -y caddy
-# 在 .env 设置 PORT=3000、BIND_HOST=127.0.0.1
-docker compose up -d
-sudo cp deploy/Caddyfile.http /etc/caddy/Caddyfile
+cd /opt/evt-timeline
+docker compose exec -T web npm run backup
+cp -p .env .env.before-caddy
+# 编辑 .env，设置 PORT=3000、BIND_HOST=127.0.0.1
+# 以下复制适用于没有其他站点的新 Caddy 安装
+sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
+sudo caddy fmt --overwrite /etc/caddy/Caddyfile
 sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl enable caddy
-sudo systemctl restart caddy
+docker compose up -d --no-build
+sudo systemctl enable --now caddy
+sudo systemctl reload caddy
 ```
 
-如果机器已有 Caddy 站点，先备份并合并配置，避免覆盖其他站点。
+`deploy/Caddyfile` 内容：
 
-1. 将域名的 A 记录指向服务器；若配置 AAAA，确保 IPv6 也能访问。
-2. 放行 80、443 端口，在服务器安装 Caddy。
-3. 将 `deploy/Caddyfile` 中 `events.example.com` 改为实际域名，安装到 Caddy 配置目录并重新加载。
-4. Caddy 在宿主机运行时，将 `.env` 设为 `PORT=3000`、`BIND_HOST=127.0.0.1`，执行 `docker compose up -d`，只通过代理公开访问。
-5. 检查 HTTPS 首页、导入页、来源页及健康接口。域名未确定前可先用 IP 演示。
+```caddyfile
+timeline.tianyubai.cn {
+    reverse_proxy 127.0.0.1:3000
+}
+```
 
-项目中的 Caddyfile 为后续接入模板，复制文件本身不会自动绑定域名。
+DNS 生效且 80/443 可从公网访问后，Caddy 自动申请、续期证书，并将 HTTP 重定向到 HTTPS，详见 [Caddy 自动 HTTPS 文档](https://caddyserver.com/docs/automatic-https)。证书存储由宿主机 Caddy 服务持久化，不随应用容器重建删除。
+
+```bash
+getent ahostsv4 timeline.tianyubai.cn
+curl --fail http://127.0.0.1:3000/api/health
+curl -I http://timeline.tianyubai.cn
+curl --fail https://timeline.tianyubai.cn/api/health
+sudo journalctl -u caddy --since '10 minutes ago' --no-pager
+docker compose ps
+```
+
+健康接口成功后检查首页、事件页、资料页和研究详情；只读验收，不创建真实分析任务。启用回环绑定后，公网 `IP:3000` 不再是访问入口。若域名尚未解析，可先安装配置并保留原 `BIND_HOST=0.0.0.0`，待 HTTPS 验证成功后再切换为回环绑定，避免切断现有入口。
+
+回滚：恢复备份的 `.env` 后执行 `docker compose up -d --no-build`；恢复原 Caddy 配置并验证、reload。不要删除数据卷，也不需要恢复数据库来回滚代理配置。
 
 ## 发布后浏览器验收
 

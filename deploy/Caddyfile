@@ -1,4 +1,5 @@
-# Replace events.example.com with your domain; point its DNS A record at the server.
-events.example.com {
+# DNS A: timeline.tianyubai.cn -> 185.115.207.143
+# Host Caddy proxies to the Docker port bound on loopback.
+timeline.tianyubai.cn {
     reverse_proxy 127.0.0.1:3000
 }

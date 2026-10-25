@@ -2,7 +2,7 @@
 
 输入 A 股代码和披露日期范围，自动检索真实公告与新闻，逐步整理事项、原文摘录和证据冲突；也支持人工导入及事件历史回看。
 
-测试入口：[股票区间研究](http://185.115.207.143:3000/research) · [事件库](http://185.115.207.143:3000/events) · [资料库](http://185.115.207.143:3000/events?tab=materials)。最新功能、回填及部署验收见 [统一事件库与批量清除记录](docs/library-fix-2026-10-26.md)。
+测试入口：[股票区间研究](https://timeline.tianyubai.cn/research) · [事件库](https://timeline.tianyubai.cn/events) · [资料库](https://timeline.tianyubai.cn/events?tab=materials)。最新功能、回填及部署验收见 [统一事件库与批量清除记录](docs/library-fix-2026-10-26.md)。
 
 发布镜像：[zht7063/investment-event-timeline](https://hub.docker.com/r/zht7063/investment-event-timeline)，提供 `latest` 和固定版本 `git-efaa6d6`，平台为 `linux/amd64`。
 
@@ -242,8 +242,9 @@ DATABASE_PATH=/tmp/rehearsal.db npm run library:backfill
 - [新测试服务器部署与真实验收](docs/research-deployment-2026-10-26.md)
 - [统一事件库、批量清除及最新验收](docs/library-fix-2026-10-26.md)
 - [Docker 安装、回填与 Docker Hub 镜像](docs/docker-install.md)
+- [Caddy 域名部署与验收](docs/caddy-deployment-2026-10-26.md)
 
-当前测试服务器直接提供 3000 端口，未使用旧演示部署的 Caddy 入口。早期演示版的历史发布情况见 [演示版发布记录](docs/release-readiness.md)；当前验证结果以上表及最新验收记录为准。
+测试入口为 `https://timeline.tianyubai.cn`，由 Cloudflare 转发至宿主机 Caddy，再代理到 `127.0.0.1:3000`；应用端口仅本机可访问。配置及验证步骤见 [Caddy 域名接入](docs/docker-install.md#绑定-timelinetianyubaicn-caddy-https)。早期演示版的历史发布情况见 [演示版发布记录](docs/release-readiness.md)；当前验证结果以上表及最新验收记录为准。
 
 ## 未做事项
 
