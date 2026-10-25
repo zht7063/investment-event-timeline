@@ -96,7 +96,7 @@ sudo systemctl enable --now evt-timeline
 
 # 定时同步（每 30 分钟）
 crontab -e
-# */30 * * * * cd /path/to/project && npx tsx scripts/sync.ts >> /tmp/evt-sync.log 2>&1
+# */30 * * * * cd /path/to/project && npm run sync >> /tmp/evt-sync.log 2>&1
 ```
 
 ### Docker
@@ -113,7 +113,7 @@ docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-
 - 不做全市场资讯平台、用户系统、持仓管理、交易或投资建议
 - 不预测涨跌，不给出买卖建议
 - 来源等级只用于排序和规则，不换算成真实性概率
-- 无 Playwright e2e 测试（计划内但未在 3 小时窗口完成）
+- Playwright 冒烟测试只覆盖页面能否打开和导航（6 项，2026-10-25 在本机通过），不含导入→关联→撤销的完整链路；运行前需 `npm run build`，并安装浏览器：`npx playwright install chromium`
 
 ## 文档
 
@@ -121,3 +121,6 @@ docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-
 - [AI 使用与验证记录](docs/ai-usage.md)
 - [测试说明](docs/testing.md)
 - [数据探测结果](docs/data-probe.md)
+| `SYNC_CODES` | 否 | 同步标的代码（逗号分隔，如 `300308.SZ,600519.SH`）；种子数据 DEMO-* 不会被同步 |
+
+> 以下 systemd 和 cron 配置尚未在目标机器上执行过，首次部署请逐步验证。

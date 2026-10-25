@@ -39,3 +39,15 @@
 | 部署 | systemd 单元文件、setup.sh、Dockerfile | 直接 `node next start` 验证：health check 200、events API 3 个事件、HTML 页面渲染正确 | `sudo systemctl` 在沙箱中不可用，改为直接 node 进程启动 |
 | 同步脚本 | `scripts/sync.ts`、`npm run sync` | 类型检查通过 | — |
 | valid_until 过期 | 确认已在读取路径中线上（`searchEvents` 对所有事件调用 `recompute`，`getEventDetail` 在实时视图也调用）| 种子数据的收购事件正确显示"已失效" | 无需额外修改，handoff 中标记的连线已在前一个 session 完成 |
+
+## 2026-10-25 2:40+ (交接后修复)
+
+| 环节 | AI 做了什么 | 人工/验证 | 修正 |
+| --- | --- | --- | --- |
+| 同步脚本 .env | `package.json` sync 命令改为 `node --env-file-if-exists=.env --import tsx`；`deploy/setup.sh` cron 改为 `npm run sync` | `npm test` 61/61，typecheck clean | 原来 `tsx scripts/sync.ts` 不加载 `.env`，与脚本注释矛盾 |
+| /api/prices 校验 | 新增 ticker 格式校验（`/^\d{6}\.[A-Z]{2}$/`），过滤上游返回中不匹配请求代码的行 | typecheck clean | 原来传入 DEMO-A 会返回无效数据 |
+| SYNC_CODES 文档 | `.local.env` 和 `readme.md` 补充 `SYNC_CODES` 说明 | 目检 | 原来未在任何文档中提及 |
+| 文档修正 | `readme.md` 部署段加"尚未执行"提示，cron 示例改为 `npm run sync`；`docs/testing.md` 加"未重新验证"提示和三项已知缺口 | 目检 | 原来描述过于乐观 |
+| 同步测试 | 新增 `tests/integration/sync.test.ts`：14 个测试覆盖 registerProviders、syncCodes、configuredProviderIds、syncSource（未配置、无标的、去重、上游失败保留旧数据、未知源）、acquireLock、lockedSync busy | 61/61 全部通过 | 首版"上游失败"测试预期 status 为 ok，实际为 failed（所有代码失败且 added=0 时逻辑正确返回 failed），修正测试预期 |
+| 单位口径测试 | 新增 `tests/integration/ingest.test.ts` "unit and basis" 用例：验证同事件不同口径（元 vs %）不产生冲突、不同事件的同单位论断隔离、模型输出万元/不含税原样存储不归一化 | 62/62 全部通过 | — |
+| Playwright 冒烟 | 新增 `playwright.config.ts` 和 `tests/e2e/smoke.test.ts`：6 个冒烟用例（health、首页加载、事件详情、数据源页、导入页、状态筛选）；`package.json` 加 `test:e2e` 脚本 | 本机运行 6/6 通过，用了 4 轮才稳定 | ① 浏览器二进制经 mihomo 代理下载在 90% 处反复 SSL 报错，改用 curl 下载 zip 手动解压；还需单独下载 headless shell。② 定位器用逗号拼接 `text=` 无效，改为 `getByText(正则)`。③ 首页冷启动渲染需十几秒到一分钟，改用 `domcontentloaded` 并放宽超时。④ 筛选用例原先点击提交按钮超时，且页面有两个 submit 按钮，最终改为直接带查询参数访问，因此没有覆盖表单点击 |

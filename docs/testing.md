@@ -13,6 +13,12 @@ npm run typecheck
 npm run build
 ```
 
+```bash
+# Playwright e2e smoke test (requires build + Playwright browsers)
+# npm i -D @playwright/test && npx playwright install --with-deps chromium
+npm run test:e2e
+```
+
 ## Test Results (2026-10-25)
 
 | Category | File | Tests | Status |
@@ -23,11 +29,11 @@ npm run build
 | Unit | tests/unit/ai.test.ts | extraction validation, quote check, model JSON parsing | Pass |
 | Unit | tests/unit/http.test.ts | retry policy (429, 5xx, timeout, 400/401/403) | Pass |
 | Integration | tests/integration/seed.test.ts | seed data loads, conclusion history replays correctly | Pass |
-| Integration | tests/integration/ingest.test.ts | import, dedup, analyze, associate, revoke, recompute | Pass |
+| Integration | tests/integration/ingest.test.ts | import, dedup, analyze, associate, revoke, recompute, unit/basis isolation | Pass |
 | Build | `npm run build` | 17 routes registered, 0 errors | Pass |
 | Typecheck | `npm run typecheck` | 0 errors | Pass |
 
-Total: 7 test files, 47 tests, all passing.
+Total: 8 test files, 62 tests, all passing.
 
 ## What Tests Cover
 
@@ -47,9 +53,9 @@ Total: 7 test files, 47 tests, all passing.
 
 ## What Tests Do Not Cover (Known Gaps)
 
-- No Playwright e2e tests yet (planned but not created in 3-hour window)
+- Playwright smoke test (`tests/e2e/smoke.test.ts`, 6 cases, passed 2026-10-25) only checks that pages open and navigate. It does not cover import -> associate -> revoke in the browser, and the status filter case navigates by URL instead of clicking the form button (the click timed out on a cold server render).
 - No real model or provider smoke tests in the automated suite (manual verification done, not repeatable without API keys)
-- "Unit and basis must not be mixed" edge case has no dedicated test (mentioned in plan section 9)
+- "Unit and basis must not be mixed" covered in tests/integration/ingest.test.ts (verifies claims with different unit/basis stay separate, no false conflicts)
 - No load or stress testing
 - No accessibility automated testing (WCAG compliance requires manual testing with assistive technologies)
 
@@ -62,3 +68,9 @@ Total: 7 test files, 47 tests, all passing.
 5. Sources page: 3 live sources (iFinD notice, iFinD news, Fuyao news) + 6 constructed
 6. API health check: 200 with db ok
 7. Production build: all 17 routes, no errors
+
+> Below items were verified manually during development sessions. They have not been re-verified since the last code changes and are not automated.
+- Data source connectors (`src/server/sources/fuyao.ts`, `ifind.ts`) have no isolated unit tests (sync module covered by integration tests)
+- `/api/prices` endpoint has no automated tests
+- Sync script has never been executed against real Fuyao/iFinD APIs
+| Integration | tests/integration/sync.test.ts | provider registration, sync codes, dedup, upstream failure, lock | Pass |
