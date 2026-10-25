@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "sync": "node --env-file-if-exists=.env --import tsx scripts/sync.ts",
+    "backup": "node --env-file-if-exists=.env --import tsx scripts/backup.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

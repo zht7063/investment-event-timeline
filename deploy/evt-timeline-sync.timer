@@ -1,0 +1,10 @@
+[Unit]
+Description=Investment Event Timeline periodic sync
+
+[Timer]
+OnBootSec=5min
+OnUnitInactiveSec=@SYNC_INTERVAL_MINUTES@min
+Unit=evt-timeline-sync.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Investment Event Timeline provider sync
+After=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=@PROJECT_DIR@
+ExecStart=@NODE_BIN@ --env-file-if-exists=.env --import tsx scripts/sync.ts
+UMask=0077
+NoNewPrivileges=true
+TimeoutStartSec=25min
