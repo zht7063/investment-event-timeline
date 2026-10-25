@@ -5,10 +5,10 @@ export default defineConfig({
   timeout: 60_000,
   retries: 0,
   use: {
-    baseURL: "http://127.0.0.1:3100",
+    baseURL: process.env.E2E_BASE_URL || "http://127.0.0.1:3100",
     headless: !process.env.HEADED,
   },
-  webServer: {
+  webServer: process.env.E2E_BASE_URL ? undefined : {
     command: "node tests/e2e/server.mjs",
     url: "http://127.0.0.1:3100/api/health",
     reuseExistingServer: false,

@@ -1,0 +1,36 @@
+name: evt-timeline
+
+x-app: &app
+  image: evt-timeline:local
+  build: .
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    DATABASE_PATH: /app/data/app.db
+    BACKUP_DIR: /app/data/backups
+  volumes:
+    - app-data:/app/data
+  logging:
+    driver: json-file
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  web:
+    <<: *app
+    ports:
+      - "${BIND_HOST:-0.0.0.0}:${PORT:-3000}:3000"
+
+  sync:
+    <<: *app
+    depends_on:
+      web:
+        condition: service_healthy
+    init: true
+    command: ["node", "scripts/sync-loop.mjs"]
+    healthcheck:
+      disable: true
+
+volumes:
+  app-data:

@@ -87,7 +87,7 @@ docs/              # 计划、AI 记录、测试说明
 
 ## 部署
 
-### 直接运行（推荐）
+### 直接运行
 
 ```bash
 npm ci
@@ -105,14 +105,20 @@ npm run backup
 ```
 
 部署脚本生成 `systemd --user` 单元，并使用 timer 定时同步；日志由 journal 管理。
-测试机旧部署目前仍使用 cron，本次新脚本尚未安装。上线核对和回滚步骤见 `docs/release-readiness.md`。
+本次测试服务器使用 Docker Compose；systemd 脚本保留为直接运行的备选方式。
 
-### Docker（配置已补齐，尚未实测镜像）
+### Docker Compose（推荐）
 
 ```bash
-docker build -t evt-timeline .
-docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-timeline
+cp .local.env .env   # 填写模型、数据源凭证和 ADMIN_TOKEN
+chmod 600 .env
+docker compose up -d --build
+docker compose ps
 ```
+
+Compose 同时运行网页和定时同步服务，共享持久化数据库；默认端口 3000。
+安装、更新、备份恢复、日志和后续域名接入见 [Docker 安装说明](docs/docker-install.md)。
+不要与旧 cron/systemd 同步任务同时运行。
 
 ## 已知边界
 
@@ -132,7 +138,7 @@ docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-
 - [已知缺陷与修复记录](docs/known-bugs.md)
 - [真实 API 测试报告](docs/api-test-report-2026-10-25.md)
 
-测试机已部署并完成真实同步，本轮只读复核正常；本次代码修复尚未发布。当前部署状态、演示版边界与片段证据说明见 [上线前收尾清单](docs/release-readiness.md)。
+测试服务器已使用 Docker Compose 部署，Caddy 提供 HTTP 入口。当前部署状态与验收结果见 [发布记录](docs/release-readiness.md)。
 
 ## 未做事项
 

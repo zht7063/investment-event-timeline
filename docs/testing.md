@@ -101,3 +101,13 @@ npm run test:e2e
 - 生产构建保留类型检查，没有 `ignoreBuildErrors`。
 - Docker 镜像和新的 systemd/timer 模板未在目标环境执行，不能据静态检查声称部署验收完成。
 - 用户决定演示版不增加模型额度控制；片段证据结论规则保持原样。新版本发布已获授权，但当前 SSH 认证失败，远端验收尚未执行，见 `docs/release-readiness.md`。
+
+## Docker 演示发布复核（2026-10-25）
+
+- 本地生产构建、独立类型检查通过；默认 TypeScript CLI 在受限执行环境中返回空 stdout，改用 Next.js 文档支持的编译器 API 后构建正常，未禁用类型检查。
+- `npm test -- --maxWorkers=1`：80/80。
+- `npm run test:e2e -- --workers=1`：10/10。
+- 测试服务器 Docker 镜像构建成功，容器非 root 运行，数据卷持久化。
+- `E2E_BASE_URL=http://127.0.0.1:13100 npm run test:e2e -- tests/e2e/smoke.test.ts --workers=1`：7/7。该端口为 SSH 转发到测试服务器 Caddy 的验收入口。
+- 公网 `http://38.246.253.190/api/health` 经物理网卡访问返回 200；默认透明代理路径曾出现连接重置，不能将该网络失败解释为浏览器功能缺陷。
+- 三个真实数据源同步、真实公告模型抽取/关联/撤销/历史回看、管理失败重试、容器重建持久化、备份恢复均完成验证，详见 `release-readiness.md`。

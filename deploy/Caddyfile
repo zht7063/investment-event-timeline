@@ -1,0 +1,4 @@
+# Replace events.example.com with your domain; point its DNS A record at the server.
+events.example.com {
+    reverse_proxy 127.0.0.1:3000
+}
