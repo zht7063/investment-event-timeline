@@ -12,7 +12,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "sync": "tsx scripts/sync.ts"
+    "sync": "node --env-file-if-exists=.env --import tsx scripts/sync.ts"
   },
   "dependencies": {
     "next": "16.4.3",

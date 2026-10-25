@@ -19,7 +19,7 @@ systemctl enable evt-timeline
 systemctl restart evt-timeline
 
 echo "==> Installing cron (sync every 30 min)"
-CRON_LINE="*/30 * * * * cd $PROJ && /home/zht/.local/bin/npx tsx scripts/sync.ts >> /tmp/evt-sync.log 2>&1"
+CRON_LINE="*/30 * * * * cd $PROJ && /home/zht/.local/bin/npm run sync >> /tmp/evt-sync.log 2>&1"
 ( crontab -u zht -l 2>/dev/null | grep -v 'scripts/sync.ts'; echo "$CRON_LINE" ) | crontab -u zht -
 
 echo "==> Checking service"

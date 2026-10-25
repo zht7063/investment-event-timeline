@@ -1,6 +1,6 @@
 /**
  * Cron entry: sync every configured provider once.
- * Run with `npm run sync` (loads .env). Exit 0 ok, 1 errors, 2 another run holds the lock.
+ * Run with `npm run sync` (uses --env-file-if-exists=.env). Exit 0 ok, 1 errors, 2 another run holds the lock.
  */
 import { ensureSeeded } from "../src/server/seed";
 import { configuredProviderIds, lockedSync, registerProviders } from "../src/server/sources/sync";
