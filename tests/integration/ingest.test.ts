@@ -103,3 +103,27 @@ describe("as-of view", () => {
     expect(getEventDetail("evt-acq", null, db)!.conclusion.status).toBe("expired");
   });
 });
+
+describe("unit and basis", () => {
+  it("keeps each claim's own unit and basis; numbers are never converted or merged across events", async () => {
+    const acq = getEventDetail("evt-acq", null, db)!;
+    const byClaim = new Map(acq.evidence.map((e) => [e.claimId, e]));
+    // Same event, different basis: deal value (元) and stake ratio (%) stay separate claims.
+    expect(byClaim.get("c-rumor")).toMatchObject({ unit: "元", basis: "交易对价" });
+    expect(byClaim.get("c-ann-60")).toMatchObject({ unit: "%", basis: "股权比例" });
+    // Another company's 5亿元 planned investment shares the unit 元 but is not pulled into this event.
+    expect(acq.evidence.some((e) => e.claimId === "c-other-co")).toBe(false);
+    expect(getEventDetail("evt-park", null, db)!.evidence.find((e) => e.claimId === "c-other-co")).toMatchObject({ unit: "元", basis: "计划投资额" });
+
+    // Model output with 万元 is stored verbatim, not normalized to 元.
+    const text = "示例光电公告：本次交易定金为3000万元（不含税）。";
+    const { versionId } = importDocument({ source: { id: "src-issuer-a" }, title: "定金公告", body: text, url: "https://issuer.example/ann/10" }, db, T0);
+    const ext: Extractor = async ({ body: b }) =>
+      checkExtraction(b, JSON.stringify({
+        event: { title: "示例光电收购星河半导体", subjectCode: "DEMO-A", eventType: "acquisition", matterKey: "acq:星河半导体" },
+        claims: [{ quote: "本次交易定金为3000万元（不含税）", category: "fact", content: "定金3000万元", unit: "万元", basis: "不含税" }],
+      }));
+    expect((await analyzeVersion(versionId, ext, db)).ok).toBe(true);
+    expect(db.prepare("select unit, basis from claims where version_id = ?").get(versionId)).toEqual({ unit: "万元", basis: "不含税" });
+  });
+});
