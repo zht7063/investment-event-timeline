@@ -133,7 +133,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
             </li>
           ))}
         </ul>
-        <MarketBackground codes={d.instruments.map((i) => i.code)} />
+        <MarketBackground instruments={d.instruments.map((i) => ({ code: i.code, name: i.name }))} />
       </section>
 
       <section aria-labelledby="tl-h">

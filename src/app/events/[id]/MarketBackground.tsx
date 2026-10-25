@@ -11,6 +11,8 @@ type Price = {
   timestamp: string | null;
 };
 
+type Instrument = { code: string; name: string };
+
 function formatTime(iso: string | null): string {
   if (!iso) return "";
   try {
@@ -20,15 +22,21 @@ function formatTime(iso: string | null): string {
   }
 }
 
-export function MarketBackground({ codes }: { codes: string[] }) {
+/** Display name: prefer the instrument name stored in event_instruments over the upstream name (often empty). */
+function displayName(p: Price, nameMap: Map<string, string>): string {
+  return nameMap.get(p.code) || p.name || p.code;
+}
+
+export function MarketBackground({ instruments }: { instruments: Instrument[] }) {
   const [prices, setPrices] = useState<Price[] | null>(null);
   const [unavailable, setUnavailable] = useState(false);
 
+  const codes = instruments.filter((i) => /\.\w{2}$/.test(i.code)).map((i) => i.code);
+  const nameMap = new Map(instruments.map((i) => [i.code, i.name]));
+
   useEffect(() => {
-    // Only fetch for real A-share tickers
-    const real = codes.filter((c) => /\.\w{2}$/.test(c));
-    if (!real.length) return;
-    fetch(`/api/prices?codes=${encodeURIComponent(real.join(","))}`)
+    if (!codes.length) return;
+    fetch(`/api/prices?codes=${encodeURIComponent(codes.join(","))}`)
       .then((r) => r.json())
       .then((d: { prices: Price[]; unavailable?: boolean }) => {
         setPrices(d.prices);
@@ -37,36 +45,27 @@ export function MarketBackground({ codes }: { codes: string[] }) {
       .catch(() => setUnavailable(true));
   }, [codes.join(",")]);
 
-  if (unavailable) return <p className="hint">Market data: not configured (set FUYAO_API_KEY).</p>;
+  if (unavailable) return <p className="hint">行情数据未配置（请设置 FUYAO_API_KEY）。</p>;
   if (!prices) return null;
-  if (prices.length === 0) return <p className="hint">No market data available for these tickers.</p>;
+  if (prices.length === 0) return <p className="hint">暂无行情数据。</p>;
 
   return (
     <div>
-      <ul style={{ listStyle: "none", padding: 0, display: "flex", gap: "0.8rem", flexWrap: "wrap" }}>
+      <ul className="market-prices">
         {prices.map((p) => (
-          <li
-            key={p.code}
-            style={{
-              padding: "0.5rem 0.8rem",
-              border: "1px solid var(--line)",
-              background: "var(--card)",
-              fontFamily: "var(--mono)",
-              fontSize: "0.85rem",
-            }}
-          >
-            <strong>{p.name || p.code}</strong>{" "}
+          <li key={p.code} className="market-price-card">
+            <strong>{displayName(p, nameMap)}</strong>{" "}
             {p.lastPrice !== null && <span>{p.lastPrice.toFixed(2)}</span>}
             {p.changeRatioPct !== null && (
-              <span style={{ color: p.changeRatioPct >= 0 ? "var(--s-supported)" : "var(--s-denied)", marginLeft: "0.4rem" }}>
+              <span className={p.changeRatioPct >= 0 ? "price-up" : "price-down"}>
                 {p.changeRatioPct >= 0 ? "+" : ""}{p.changeRatioPct.toFixed(2)}%
               </span>
             )}
-            {p.timestamp && <span className="meta" style={{ display: "block" }}>{formatTime(p.timestamp)}</span>}
+            {p.timestamp && <span className="meta">{formatTime(p.timestamp)}</span>}
           </li>
         ))}
       </ul>
-      <p className="hint">Market data is for background only and is not used as evidence of event truth.</p>
+      <p className="hint">行情数据仅作背景参考，不作事件真实性证据。</p>
     </div>
   );
 }
