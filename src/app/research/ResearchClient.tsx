@@ -334,8 +334,8 @@ export function ResearchClient({ initial }: { initial: Data }) {
       <section id="research-documents">
         <h2>已收录资料</h2>
         <p className="count">
-          共 {data.total} 份，当前 {data.total ? offset + 1 : 0}–
-          {Math.min(offset + 20, data.total)}
+          共 {data.total} 份，当前 {documents.length ? data.offset + 1 : 0}–
+          {documents.length ? data.offset + documents.length : 0}
         </p>
         {documents.map((doc) => (
           <details className="research-document" key={doc.id}>
@@ -363,14 +363,14 @@ export function ResearchClient({ initial }: { initial: Data }) {
           </details>
         ))}
         {!documents.length && (
-          <p className="empty">尚无已收录资料。请查看上方检索状态。</p>
+          <p className="empty">{data.total ? "当前页没有资料，请返回上一页。" : "尚无已收录资料。请查看上方检索状态。"}</p>
         )}
-        {data.total > 20 && <nav className="research-actions" aria-label="资料分页">
+        {(data.total > 20 || (data.total > 0 && offset > 0)) && <nav className="research-actions" aria-label="资料分页">
           <button
             className="ghost"
             disabled={offset === 0}
             onClick={() =>
-              router.replace(`?offset=${Math.max(0, offset - 20)}`, {
+              router.replace(`?offset=${Math.max(0, Math.min(offset - 20, Math.floor((data.total - 1) / 20) * 20))}`, {
                 scroll: false,
               })
             }

@@ -76,6 +76,21 @@ test("new stock automatically fetches both pages, analyzes and cites conflicting
     ),
   ).toBe(true);
   expect(errors).toEqual([]);
+  // A shared or edited URL can point beyond the available documents.
+  // Even a one-page result must offer recovery, including very large offsets.
+  for (const offset of [1, 20, 200]) {
+    await page.goto(`/research/${id}?offset=${offset}`);
+    const documents = page.locator("#research-documents");
+    await expect(documents.locator(".research-document")).toHaveCount(offset === 1 ? 1 : 0);
+    await expect(documents.locator(".count")).toHaveText(offset === 1 ? "共 2 份，当前 2–2" : "共 2 份，当前 0–0");
+    if (offset > 1) await expect(documents.getByText("当前页没有资料，请返回上一页。")).toBeVisible();
+    if (offset === 20) await documents.screenshot({ path: test.info().outputPath("documents-out-of-range.png") });
+    await documents.getByRole("button", { name: "上一页", exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/research/${id}\\?offset=0$`));
+    await expect(documents.locator(".research-document")).toHaveCount(2);
+    await expect(documents.locator(".count")).toHaveText("共 2 份，当前 1–2");
+    await expect(page.getByRole("navigation", { name: "资料分页" })).toHaveCount(0);
+  }
 });
 
 test("cancel is durable and failed polling preserves results with a retry action", async ({
