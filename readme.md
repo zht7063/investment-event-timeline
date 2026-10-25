@@ -26,6 +26,18 @@ npm start            # http://localhost:3000
 curl -X POST http://localhost:3000/api/demo/reset -H "Authorization: Bearer <ADMIN_TOKEN>"
 ```
 
+## 补充多场景演示数据
+
+```bash
+node --env-file-if-exists=.env --import tsx scripts/demo-scenarios.ts
+```
+
+执行前自动备份 SQLite；追加 7 个人工事件、5 条研究记录与 6 份研究资料，不重置既有数据。固定标识保证重复执行不重复新增。全部使用虚构公司与 `DEMO-*` 代码，标题、资料和来源明确标注“构造演示”，不调用模型或资讯供应商。
+
+事件覆盖待核实、有证据支持、冲突、否认、失效、更正历史和同源转载；研究覆盖完整结果、零结果、覆盖受限、分析失败、日期未知以及取消后保留成果。研究记录使用终态，后台不会自动执行；它们用于展示预设结果，不是可继续真实检索的证券研究。查看 [事件案例](https://timeline.tianyubai.cn/events?q=构造演示) 或 [研究记录](https://timeline.tianyubai.cn/research)。
+
+线上写入及验证见 [演示数据记录](docs/demo-scenarios-2026-10-26.md)。
+
 ## 环境变量
 
 | 变量 | 必填 | 说明 |
