@@ -1,4 +1,4 @@
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { getNewsTimeline, getPriceSnapshot } from "@/server/sources/fuyao";
 import { searchNews } from "@/server/sources/ifind";
 
@@ -12,12 +12,30 @@ function mcpResponse(payload: unknown) {
   vi.stubGlobal("fetch", fetchMock);
 }
 
+describe("getPriceSnapshot", () => {
+
 it("reads real Fuyao snapshot rows and the shared timestamp", async () => {
   vi.stubEnv("FUYAO_API_KEY", "test");
   vi.stubEnv("FUYAO_MCP_A_SHARE_URL", "https://example.com/mcp");
   mcpResponse({ code: 0, data: { timestamp: 1792915685000, total: 1, item: [{ thscode: "300308.SZ", last_price: 612.63, price_change_ratio_pct: 3.816238, turnover: 27918480000 }] } });
   expect(await getPriceSnapshot(["300308.SZ"])).toEqual([{ code: "300308.SZ", name: "", lastPrice: 612.63, changeRatioPct: 3.816238, turnover: 27918480000, timestamp: new Date(1792915685000).toISOString() }]);
 });
+
+it("throws on non-zero business code instead of returning empty array", async () => {
+  vi.stubEnv("FUYAO_API_KEY", "test");
+  vi.stubEnv("FUYAO_MCP_A_SHARE_URL", "https://example.com/mcp");
+  mcpResponse({ code: -1, message: "Invalid thscodes", data: null });
+  await expect(getPriceSnapshot(["INVALID"])).rejects.toThrow(/business error.*-1/i);
+});
+
+it("returns empty array when upstream returns zero rows with code 0", async () => {
+  vi.stubEnv("FUYAO_API_KEY", "test");
+  vi.stubEnv("FUYAO_MCP_A_SHARE_URL", "https://example.com/mcp");
+  mcpResponse({ code: 0, data: { timestamp: 1792915685000, total: 0, item: [] } });
+  expect(await getPriceSnapshot(["300308.SZ"])).toEqual([]);
+});
+
+}); // describe getPriceSnapshot
 
 it("unwraps iFinD news data.data JSON", async () => {
   vi.stubEnv("IFIND_TOKEN", "test");

@@ -91,20 +91,20 @@ export async function getPriceSnapshot(thscodes: string[]): Promise<PriceSnapsho
   };
   const text = result?.content?.find((c: { type: string }) => c.type === "text")?.text;
   if (!text) return [];
-  try {
-    const data = JSON.parse(text);
-    const rows = Array.isArray(data.data?.item) ? data.data.item : Array.isArray(data) ? data : data.data ? (Array.isArray(data.data) ? data.data : [data.data]) : [data];
-    return rows.map((r: Record<string, unknown>) => ({
-      code: String(r.thscode ?? r.code ?? ""),
-      name: String(r.name ?? r.stock_name ?? ""),
-      lastPrice: typeof r.last_price === "number" ? r.last_price : null,
-      changeRatioPct: typeof r.price_change_ratio_pct === "number" ? r.price_change_ratio_pct : null,
-      turnover: typeof r.turnover === "number" ? r.turnover : null,
-      timestamp: (r.timestamp ?? data.data?.timestamp) ? new Date(Number(r.timestamp ?? data.data?.timestamp)).toISOString() : null,
-    }));
-  } catch {
-    return [];
+  const data = JSON.parse(text);
+  // Throw on non-zero business code (mirrors getNewsTimeline behaviour)
+  if (typeof data.code === "number" && data.code !== 0) {
+    throw new Error(`Fuyao price snapshot business error ${data.code}: ${data.message ?? "upstream error"}`);
   }
+  const rows = Array.isArray(data.data?.item) ? data.data.item : Array.isArray(data) ? data : data.data ? (Array.isArray(data.data) ? data.data : [data.data]) : [data];
+  return rows.map((r: Record<string, unknown>) => ({
+    code: String(r.thscode ?? r.code ?? ""),
+    name: String(r.name ?? r.stock_name ?? ""),
+    lastPrice: typeof r.last_price === "number" ? r.last_price : null,
+    changeRatioPct: typeof r.price_change_ratio_pct === "number" ? r.price_change_ratio_pct : null,
+    turnover: typeof r.turnover === "number" ? r.turnover : null,
+    timestamp: (r.timestamp ?? data.data?.timestamp) ? new Date(Number(r.timestamp ?? data.data?.timestamp)).toISOString() : null,
+  }));
 }
 
 export type FuyaoNewsItem = {
