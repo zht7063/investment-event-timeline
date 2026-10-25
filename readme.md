@@ -122,7 +122,22 @@ docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-
 - [AI 使用与验证记录](docs/ai-usage.md)
 - [测试说明](docs/testing.md)
 - [数据探测结果](docs/data-probe.md)
+- [已知缺陷与修复记录](docs/known-bugs.md)
+- [真实 API 测试报告](docs/api-test-report-2026-10-25.md)
 
 > 以下 systemd 和 cron 配置尚未在目标机器上执行过，首次部署请逐步验证。
 >
 > 真实 API 验证结果来自用户本机（macOS），本服务器尚未执行同步。详见 `docs/api-test-report-2026-10-25.md`。
+- Playwright 冒烟测试只覆盖页面能否打开和导航（6 项，2026-10-25 在本机通过），不含导入→关联→撤销的完整链路；运行前需 `npm run build`，并安装浏览器：`npx playwright install chromium`
+
+## 未做事项
+
+以下是实施计划中提到但本次未实现或部分实现的内容：
+
+- 访客会话隔离、请求限流、模型调用配额：公开实例依赖管理员重置
+- 模型润色结论摘要：仅使用模板生成，未接入模型润色
+- 多标的同步验证：真实 API 仅覆盖 `300308.SZ`，多标的、分页、限流场景未验证
+- Playwright 完整链路测试：冒烟 6 项通过，但未覆盖导入→关联→撤销端到端
+- `/api/prices` 自动化测试：仅有人工验证
+- 负载测试、无障碍自动化测试
+- 演示视频

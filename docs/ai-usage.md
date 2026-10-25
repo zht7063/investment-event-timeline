@@ -64,3 +64,13 @@
 | iFinD 新闻 | 单层 JSON | `data.data` 是 JSON 字符串，内含中文键数组 | 递归解包 |
 | 扶摇业务错误 | `getPriceSnapshot` 不检查业务码，`catch` 返回空数组 | HTTP 200 + 非零业务码被当成功，掩盖参数错误 | 非零码抛错（与 `getNewsTimeline` 一致） |
 | Playwright 浏览器 | 通过 npm 下载 | mihomo 代理下 90% 处 SSL 报错，需 curl 手动下载 zip 并解压 | 手动安装 chromium + headless shell |
+
+## 2026-10-25 2:40-3:00（文档定稿与提交）
+
+| 环节 | AI 做了什么 | 人工/验证 | 修正 |
+| --- | --- | --- | --- |
+| testing.md | 重写为中文，修正测试计数（68->70）、补充 sync.test.ts 行、移除错放在"未覆盖"下的已覆盖项、整理格式 | `npm test` 70/70，与文档一致 | 原文中 sync.test.ts 行被遗漏在结果表外、"单位口径"项放在未覆盖章节但实际已覆盖 |
+| ai-usage.md | 追加本阶段记录 | 目检 | -- |
+| readme.md | 核对内容与代码一致，补充未做事项清单 | `npm run typecheck`、`npm test` | -- |
+| known-bugs.md | 核对修复状态标记 | 代码比对 | -- |
+| 提交 | 生成 conventional commit | `git log`、`npm test` | -- |
