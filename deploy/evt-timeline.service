@@ -1,0 +1,24 @@
+[Unit]
+Description=Investment Event Timeline (Next.js)
+After=network.target
+
+[Service]
+Type=simple
+User=zht
+WorkingDirectory=/home/zht/projects/investment-event-timeline
+EnvironmentFile=/home/zht/projects/investment-event-timeline/.env
+ExecStart=/home/zht/.local/bin/node node_modules/next/dist/bin/next start --port 3000
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=evt-timeline
+
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/home/zht/projects/investment-event-timeline/data
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
