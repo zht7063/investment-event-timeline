@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS document_versions (
   analysis_status TEXT NOT NULL DEFAULT 'pending' CHECK (analysis_status IN ('pending','done','failed')),
   analysis_error TEXT,
   analysis TEXT, -- JSON: extracted event features + rejected claims, for the import preview
+  subject_hint TEXT,
   UNIQUE (document_id, content_hash)
 );
 

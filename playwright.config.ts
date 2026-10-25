@@ -5,13 +5,13 @@ export default defineConfig({
   timeout: 60_000,
   retries: 0,
   use: {
-    baseURL: "http://localhost:3000",
+    baseURL: "http://127.0.0.1:3100",
     headless: !process.env.HEADED,
   },
   webServer: {
-    command: "npm start",
-    url: "http://localhost:3000/api/health",
-    reuseExistingServer: true,
+    command: "node tests/e2e/server.mjs",
+    url: "http://127.0.0.1:3100/api/health",
+    reuseExistingServer: false,
     timeout: 60_000,
   },
 });

@@ -9,7 +9,6 @@ import type { DatabaseSync } from "node:sqlite";
 import type { SourceKind } from "@/domain/types";
 import { getDb } from "../db";
 import { analyzeVersion, importDocument, type ImportInput } from "../ingest";
-import { latestVersion } from "../versions";
 import * as fuyao from "./fuyao";
 import * as ifind from "./ifind";
 
@@ -128,30 +127,25 @@ export async function syncSource(id: string, db = getDb(), opts: { analyze?: boo
     }
     for (const item of items) {
       try {
-        const r = importDocument({ ...item, source: { id } }, db);
+        const r = importDocument({ ...item, source: { id }, subjectHint: code }, db);
         if (r.decision === "duplicate") {
           result.duplicates++;
           continue;
         }
         result.added++;
-        if (budget > 0) {
-          budget--;
-          const a = await analyzeVersion(r.versionId, undefined, db, code);
-          if (a.ok) result.analyzed++;
-        }
       } catch (e) {
         result.errors.push(`${code}《${item.title.slice(0, 30)}》：${(e as Error).message}`);
       }
     }
   }
 
-  // Drain existing pending versions from this source within the remaining budget (BUG-2 fix).
+  // Analyze oldest pending versions first so fresh arrivals cannot starve the backlog.
   // Failed versions are intentionally skipped; they can be retried via the UI.
   if (budget > 0) {
     const pending = db.prepare(
       `select v.id from document_versions v join documents d on d.id = v.document_id
        where d.source_id = ? and v.analysis_status = 'pending'
-       order by v.fetched_at limit ?`,
+       order by v.fetched_at, v.rowid limit ?`,
     ).all(id, budget) as { id: string }[];
     for (const row of pending) {
       budget--;

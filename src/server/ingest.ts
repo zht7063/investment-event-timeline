@@ -26,6 +26,7 @@ export type ImportInput = {
   repostedFromId?: string | null;
   publishedAt?: string | null; // free text, parsed with parseTime (Beijing time when no zone)
   sourceUpdatedAt?: string | null;
+  subjectHint?: string | null;
 };
 
 export type ImportResult = { decision: IngestDecision; documentId: string; versionId: string };
@@ -66,6 +67,11 @@ export function importDocument(input: ImportInput, db = getDb(), now = new Date(
       : [];
     const decision = decideIngest(doc ? { hashes: versions.map((v) => v.content_hash) } : null, hash);
     if (decision === "duplicate") {
+      if (input.subjectHint) {
+        db.prepare("update document_versions set subject_hint = coalesce(subject_hint, ?) where id = ?").run(
+          input.subjectHint, versions.find((v) => v.content_hash === hash)!.id,
+        );
+      }
       return { decision, documentId: doc!.id, versionId: versions.find((v) => v.content_hash === hash)!.id };
     }
     const documentId = doc?.id ?? randomUUID();
@@ -76,9 +82,9 @@ export function importDocument(input: ImportInput, db = getDb(), now = new Date(
     }
     const versionId = randomUUID();
     db.prepare(
-      `insert into document_versions (id, document_id, body, content_hash, published_at, published_precision, source_updated_at, fetched_at, previous_version_id)
-       values (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    ).run(versionId, documentId, body, hash, published?.iso ?? null, published?.precision ?? null, updated?.iso ?? null, now, versions.at(-1)?.id ?? null);
+      `insert into document_versions (id, document_id, body, content_hash, published_at, published_precision, source_updated_at, fetched_at, previous_version_id, subject_hint)
+       values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).run(versionId, documentId, body, hash, published?.iso ?? null, published?.precision ?? null, updated?.iso ?? null, now, versions.at(-1)?.id ?? null, input.subjectHint ?? null);
     return { decision, documentId, versionId };
   });
 }
@@ -89,12 +95,12 @@ export type StoredAnalysis = {
   candidates: (CandidateScore & { title: string })[];
 };
 
-type VersionRow = { id: string; body: string; title: string; source_name: string; analysis: string | null };
+type VersionRow = { id: string; body: string; title: string; source_name: string; analysis: string | null; subject_hint: string | null };
 
 function getVersion(versionId: string, db: DatabaseSync): VersionRow {
   const v = db
     .prepare(
-      `select v.id, v.body, v.analysis, d.title, s.name as source_name
+      `select v.id, v.body, v.analysis, v.subject_hint, d.title, s.name as source_name
        from document_versions v join documents d on d.id = v.document_id join sources s on s.id = d.source_id where v.id = ?`,
     )
     .get(versionId) as VersionRow | undefined;
@@ -141,7 +147,7 @@ export async function analyzeVersion(versionId: string, extractor: Extractor = m
   const v = getVersion(versionId, db);
   let result: ExtractionResult;
   try {
-    result = await extractor({ title: v.title, body: v.body, sourceName: v.source_name, subjectHint });
+    result = await extractor({ title: v.title, body: v.body, sourceName: v.source_name, subjectHint: subjectHint || v.subject_hint });
   } catch (e) {
     const msg = e instanceof AiError ? `${e.code}：${e.message}` : "分析失败";
     db.prepare("update document_versions set analysis_status = 'failed', analysis_error = ? where id = ?").run(msg, versionId);

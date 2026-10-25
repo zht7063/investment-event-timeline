@@ -14,6 +14,7 @@ const Body = z.object({
   repostedFromId: z.string().max(64).nullish(),
   publishedAt: z.string().max(40).nullish(),
   sourceUpdatedAt: z.string().max(40).nullish(),
+  subjectHint: z.string().trim().max(32).nullish(),
 });
 
 // URL is stored as provenance only; the server never fetches it.

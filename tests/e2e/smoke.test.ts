@@ -47,10 +47,20 @@ test("import page loads", async ({ page }) => {
   await expect(page.locator("h1, h2").first()).toBeVisible({ timeout: 15_000 });
 });
 
-test("status filter navigates with query param", async ({ page }) => {
-  // Direct navigation with query string avoids SSR form submission timeout.
-  await page.goto("/?status=expired", nav);
+test("status filter submits the selected state", async ({ page }) => {
+  await page.goto("/", nav);
+  await page.getByLabel("结论状态").selectOption("expired");
+  await page.getByRole("button", { name: "筛选", exact: true }).click();
   await expect(page).toHaveURL(/status=expired/);
   // The page should still render (may show 0 results for expired).
   await expect(page.locator("h1")).toBeVisible({ timeout: 30_000 });
+});
+
+test("main pages fit a mobile viewport", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  for (const path of ["/", "/sources", "/import"]) {
+    await page.goto(path, nav);
+    await expect(page.locator("h1")).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  }
 });

@@ -10,7 +10,7 @@ import { MarketBackground } from "./MarketBackground";
 
 export const dynamic = "force-dynamic";
 
-const toBeijingInput = (iso: string) => new Date(Date.parse(iso) + 8 * 3600_000).toISOString().slice(0, 16);
+const toBeijingInput = (iso: string) => new Date(Date.parse(iso) + 8 * 3600_000).toISOString().slice(0, -1);
 
 export default async function EventPage({ params, searchParams }: PageProps<"/events/[id]">) {
   const { id } = await params;
@@ -74,7 +74,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
         <input type="hidden" name="axis" value={axis} />
         <label>
           <span>截至某时回看（北京时间）</span>
-          <input type="datetime-local" name="asOf" defaultValue={d.isHistorical ? toBeijingInput(d.asOf) : ""} />
+          <input type="datetime-local" name="asOf" step="0.001" defaultValue={d.isHistorical ? toBeijingInput(d.asOf) : ""} />
         </label>
         <button type="submit">回看</button>
         {d.isHistorical && <Link href={q({ asOf: null })}>回到当前</Link>}

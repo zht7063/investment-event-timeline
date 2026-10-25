@@ -1,4 +1,5 @@
-import { fail, handleError, requireAdmin } from "@/server/api";
+import { z } from "zod";
+import { fail, handleError, readJson, requireAdmin } from "@/server/api";
 import { analyzeVersion } from "@/server/ingest";
 import { ensureSeeded } from "@/server/seed";
 
@@ -19,13 +20,12 @@ export async function POST(req: Request) {
   const denied = requireAdmin(req);
   if (denied) return denied;
 
-  let sourceId: string | undefined;
-  let versionId: string | undefined;
-  try {
-    const body = await req.json().catch(() => ({}));
-    sourceId = typeof body.sourceId === "string" ? body.sourceId.trim() : undefined;
-    versionId = typeof body.versionId === "string" ? body.versionId.trim() : undefined;
-  } catch { /* empty body is fine */ }
+  const input = await readJson(req, z.object({
+    sourceId: z.string().trim().min(1).max(100).optional(),
+    versionId: z.string().trim().min(1).max(100).optional(),
+  }).strict());
+  if (!input.ok) return input.res;
+  const { sourceId, versionId } = input.data;
 
   const db = ensureSeeded();
 

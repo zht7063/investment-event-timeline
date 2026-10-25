@@ -64,7 +64,7 @@ export function ImportFlow({ sources, documents, events, initialDocId }: { sourc
       const p = await call<Preview>(`/api/documents/${encodeURIComponent(initialDocId)}/analyze`);
       if (!live) return;
       if (p.ok) {
-        setDoc({ documentId: initialDocId, decision: "duplicate" });
+        setDoc({ documentId: initialDocId, decision: "existing" });
         setPreview(p.data);
         setStep("analyze");
       } else {
@@ -85,6 +85,7 @@ export function ImportFlow({ sources, documents, events, initialDocId }: { sourc
       repostedFromId: s("repostedFromId") || null,
       publishedAt: s("publishedAt") || null,
       sourceUpdatedAt: s("sourceUpdatedAt") || null,
+      subjectHint: subject.trim() || null,
     };
     setBusy("import");
     const r = await call<{ documentId: string; decision: string }>("/api/documents", { method: "POST", body: JSON.stringify(payload) });
@@ -299,7 +300,7 @@ function AnalyzePanel({
   const a = preview?.analysis;
   const auto = a?.candidates.find((c) => c.autoLink);
   const [target, setTarget] = useState<string>("");
-  const chosen = target || auto?.eventId || a?.candidates[0]?.eventId || "new";
+  const chosen = target || auto?.eventId || "new";
   const [sel, setSel] = useState<Record<string, { on: boolean; relation: Relation; target: string; reason: string }>>({});
   const [targetClaims, setTargetClaims] = useState<{ eventId: string; claims: { claimId: string; content: string; sourceName: string }[] } | null>(null);
   const [manualErr, setManualErr] = useState<string | null>(null);
@@ -331,7 +332,7 @@ function AnalyzePanel({
   return (
     <div className="panel">
       <p className="meta">
-        {decision === "duplicate" ? "内容与已收录版本相同，未新增记录。" : decision === "new_version" ? "同一来源链接的内容有变化，已保存为新版本。" : "已保存为新资料。"}
+        {decision === "existing" ? "正在处理已收录资料。" : decision === "duplicate" ? "内容与已收录版本相同，未新增记录。" : decision === "new_version" ? "同一来源链接的内容有变化，已保存为新版本。" : "已保存为新资料。"}
       </p>
 
       {busy === "analyze" && (
@@ -339,11 +340,11 @@ function AnalyzePanel({
           模型分析中，通常需要 10–60 秒…
         </p>
       )}
-      {preview?.status === "failed" && busy !== "analyze" && (
+      {preview && preview.status !== "done" && busy !== "analyze" && (
         <div className="warn-box">
-          <p>状态：待分析（上次失败：{preview.error}）</p>
+          <p>{preview.status === "failed" ? `状态：分析失败（${preview.error}）` : "状态：待分析"}</p>
           <button type="button" onClick={onRetry}>
-            重试分析
+            {preview.status === "pending" ? "开始分析" : "重试分析"}
           </button>
         </div>
       )}
@@ -492,7 +493,7 @@ function AnalyzePanel({
         <p className="hint">同一公司不足以合并；只有事项标识一致才默认选中。</p>
       </fieldset>
 
-      {chosen === "new" && <NewEventFields seed={a?.event ?? null} id="new-event" />}
+      {chosen === "new" && <NewEventFields key={JSON.stringify(a?.event)} seed={a?.event ?? null} id="new-event" />}
 
       <button
         type="button"
