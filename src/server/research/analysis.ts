@@ -234,7 +234,7 @@ export function groupAnalyses(rows: Material[], code: string): Group[] {
       const id = hash(
         grounded
           ? `${code}|${event.type}|${event.objectAnchor}|${event.periodAnchor}`
-          : `${row.id}|${eventIndex}`,
+          : `${code}|${row.id}|${eventIndex}`,
       );
       const group = groups.get(id) ?? {
         id,

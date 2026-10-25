@@ -1,3 +1,4 @@
+import { relationState, type ReportEvent } from "./report";
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import {
@@ -265,6 +266,6 @@ export function researchStatus(id: string, db = getDb(), offset = 0) {
     total,
     documents: documents.map((row) => ({ ...row })),
     offset,
-    report: report ? { ...report, body: JSON.parse(report.body) } : null,
+    report: report ? { ...report, body: { ...JSON.parse(report.body), events: (JSON.parse(report.body).events as ReportEvent[]).map(event => ({ ...event, relationStatus: relationState(id, event, db) })) } } : null,
   };
 }

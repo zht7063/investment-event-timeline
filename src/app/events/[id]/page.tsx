@@ -1,3 +1,4 @@
+import { safeLibraryReturn } from "@/domain/library";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -49,7 +50,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
   const base = `/events/${event.id}`;
   const q = (o: Record<string, string | null>) => {
     const u = new URLSearchParams();
-    const merged = { axis, asOf: d.isHistorical ? toBeijingInput(d.asOf) : null, ...o };
+    const merged = { returnTo: safeLibraryReturn(sp.returnTo), axis, asOf: d.isHistorical ? toBeijingInput(d.asOf) : null, ...o };
     for (const [k, v] of Object.entries(merged)) if (v && !(k === "axis" && v === "published")) u.set(k, v);
     const s = u.toString();
     return s ? `${base}?${s}` : base;
@@ -58,7 +59,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
   return (
     <article className="detail">
       <p className="crumbs">
-        <Link href="/events">事件库</Link> / {event.subject_code}
+        <Link href={safeLibraryReturn(sp.returnTo)}>事件库</Link> / {event.subject_code}
       </p>
       <header className="detail-head">
         <div>
@@ -72,6 +73,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
 
       <form className="asof" method="get" action={base}>
         <input type="hidden" name="axis" value={axis} />
+        <input type="hidden" name="returnTo" value={safeLibraryReturn(sp.returnTo)} />
         <label>
           <span>截至某时回看（北京时间）</span>
           <input type="datetime-local" name="asOf" step="0.001" defaultValue={d.isHistorical ? toBeijingInput(d.asOf) : ""} />

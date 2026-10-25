@@ -184,3 +184,35 @@ CREATE TABLE IF NOT EXISTS research_relations (
   error TEXT,
   PRIMARY KEY(job_id, group_id)
 );
+
+-- A read index for automatic research, separate from manually reviewed evidence.
+CREATE TABLE IF NOT EXISTS library_events (
+  id TEXT PRIMARY KEY,
+  code TEXT NOT NULL,
+  merge_key TEXT NOT NULL,
+  UNIQUE(code, merge_key)
+);
+CREATE TABLE IF NOT EXISTS library_event_research (
+  event_id TEXT NOT NULL REFERENCES library_events(id),
+  job_id TEXT NOT NULL REFERENCES research_jobs(id),
+  title TEXT NOT NULL,
+  report_revision INTEGER NOT NULL,
+  updated_at TEXT NOT NULL,
+  snapshot TEXT NOT NULL,
+  PRIMARY KEY(event_id, job_id)
+);
+CREATE INDEX IF NOT EXISTS library_event_research_job ON library_event_research(job_id);
+CREATE TABLE IF NOT EXISTS library_event_materials (
+  event_id TEXT NOT NULL,
+  job_id TEXT NOT NULL,
+  material_id TEXT NOT NULL REFERENCES research_materials(id),
+  PRIMARY KEY(event_id, job_id, material_id),
+  FOREIGN KEY(event_id, job_id) REFERENCES library_event_research(event_id, job_id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS library_event_materials_material ON library_event_materials(material_id);
+CREATE TABLE IF NOT EXISTS research_relation_leases (
+  job_id TEXT NOT NULL REFERENCES research_jobs(id),
+  group_id TEXT NOT NULL,
+  lease_token TEXT NOT NULL,
+  PRIMARY KEY(job_id, group_id)
+);

@@ -16,7 +16,6 @@ import {
 } from "./providers";
 import {
   ANALYSIS_VERSION,
-  concludeGroup,
   extractResearch,
   groupAnalyses,
   groupFingerprint,
@@ -33,6 +32,9 @@ import {
   saveMaterial,
   sourceRuns,
 } from "./store";
+
+import { reportEvents, relationRecord, relationState } from "./report";
+import { indexResearch } from "./library-index";
 
 type Dependencies = {
   resolve: typeof resolveInstrument;
@@ -89,39 +91,8 @@ export function splitWindow(window: Window): Window[] {
 }
 
 export function writeReport(job: ResearchJob, db = getDb()) {
-  const groups = groupAnalyses(materials(job.id, db), job.code),
-    at = now();
-  const events = groups.map((group) => {
-    const relation = db
-      .prepare(
-        "select status,result,error,fingerprint from research_relations where job_id=? and group_id=?",
-      )
-      .get(job.id, group.id) as
-      | {
-          status: string;
-          result: string | null;
-          error: string | null;
-          fingerprint: string;
-        }
-      | undefined;
-    const ready =
-      relation?.status === "done" &&
-      relation.fingerprint === groupFingerprint(group);
-    const event = concludeGroup(
-      group,
-      ready ? (JSON.parse(relation.result!) as Links) : { links: [] },
-      at,
-    );
-    return {
-      ...event,
-      relationStatus: ready
-        ? "done"
-        : relation?.status === "failed"
-          ? "failed"
-          : "pending",
-      relationError: relation?.error ?? null,
-    };
-  });
+  const at = now();
+  const events = reportEvents(job, db, at);
   const body = {
     code: job.code,
     name: job.name,
@@ -135,6 +106,8 @@ export function writeReport(job: ResearchJob, db = getDb()) {
     `insert into research_reports(job_id,revision,generated_at,body) values(?,1,?,?)
     on conflict(job_id) do update set revision=research_reports.revision+1,generated_at=excluded.generated_at,body=excluded.body`,
   ).run(job.id, at, JSON.stringify(body));
+  const report = db.prepare("select revision from research_reports where job_id=?").get(job.id) as { revision: number };
+  indexResearch(job, events, report.revision, at, db);
 }
 
 async function fetchStep(
@@ -334,13 +307,17 @@ async function relationStep(
 ) {
   for (const group of groupAnalyses(materials(job.id, db), job.code)) {
     const fingerprint = groupFingerprint(group);
-    const existing = db
-      .prepare(
-        "select status,fingerprint from research_relations where job_id=? and group_id=?",
-      )
-      .get(job.id, group.id) as
-      { status: string; fingerprint: string } | undefined;
-    if (existing && existing.fingerprint === fingerprint) continue;
+    const existing = relationRecord(job.id, group, db);
+    if (existing?.fingerprint === fingerprint && ["done", "failed"].includes(relationState(job.id, group, db))) continue;
+    tx(db, () => {
+      if (!owns(job, db)) return;
+      db.prepare(`insert into research_relations(job_id,group_id,fingerprint,status) values(?,?,?,'running')
+        on conflict(job_id,group_id) do update set fingerprint=excluded.fingerprint,status='running',result=null,error=null`).run(job.id, group.id, fingerprint);
+      db.prepare(`insert into research_relation_leases(job_id,group_id,lease_token) values(?,?,?)
+        on conflict(job_id,group_id) do update set lease_token=excluded.lease_token`).run(job.id, group.id, job.lease_token);
+      writeReport(job, db);
+    });
+    if (!owns(job, db)) return true;
     let result: Links | null = null,
       error: string | null = null;
     try {

@@ -16,7 +16,8 @@
     "backup": "node --env-file-if-exists=.env --import tsx scripts/backup.ts",
     "test:e2e": "playwright test",
     "research:worker": "node --env-file-if-exists=.env --import tsx scripts/research-worker.ts",
-    "research:probe": "node --env-file-if-exists=.env --import tsx scripts/research-probe.ts"
+    "research:probe": "node --env-file-if-exists=.env --import tsx scripts/research-probe.ts",
+    "library:backfill": "node --env-file-if-exists=.env --import tsx scripts/backfill-library.ts"
   },
   "dependencies": {
     "next": "16.4.3",

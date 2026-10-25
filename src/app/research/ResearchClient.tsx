@@ -1,4 +1,5 @@
 "use client";
+import { RELATION_STATE_LABEL } from "@/domain/library";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -50,6 +51,7 @@ export function ResearchClient({ initial }: { initial: Data }) {
   useEffect(() => {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout>;
+    let failures = 0;
     async function poll() {
       try {
         const response = await fetch(`/api/research/${id}?offset=${offset}`, {
@@ -63,14 +65,17 @@ export function ResearchClient({ initial }: { initial: Data }) {
         if (!response.ok)
           throw new Error(result.error?.message || "读取任务失败");
         if (controller.signal.aborted) return;
+        failures = 0;
         setData(result);
         setReceivedAt(new Date().toISOString());
         setError("");
         if (["queued", "running"].includes(result.job.status))
           timer = setTimeout(poll, 2000);
       } catch {
-        if (!controller.signal.aborted)
-          setError("暂时无法更新进度，下面保留上次结果。请检查连接后重试。");
+        if (!controller.signal.aborted) {
+          setError("暂时无法更新进度，下面保留上次结果，正在自动重试。也可手动刷新。");
+          timer = setTimeout(poll, Math.min(30000, 2000 * 2 ** Math.min(failures++, 4)));
+        }
       }
     }
     void poll();
@@ -103,7 +108,7 @@ export function ResearchClient({ initial }: { initial: Data }) {
     active = ["queued", "running"].includes(job.status);
   const events = (data.report?.body.events ?? []) as Event[];
   const documents = data.documents as unknown as Document[];
-  const stage = job.status === "queued" ? "等待后台开始处理"
+  const stage = job.status === "queued" ? (data.total || job.phase !== "resolve" ? "等待继续处理" : "等待开始")
     : active ? ({ resolve: "核对股票代码与公司名称", fetch: "检索公告与新闻", analyze: "分析已收录资料", relations: "核验证据关系" }[job.phase] || "处理研究资料")
     : JOB_LABEL[job.status];
   const coverageGaps = data.sources.filter((s) => ["limited", "failed", "unavailable"].includes(s.status));
@@ -122,7 +127,7 @@ export function ResearchClient({ initial }: { initial: Data }) {
       : "当前没有待重试的检索或分析失败；再次重试不会消除来源覆盖限制。";
   return (
     <>
-      <Link href="/research#research-history" className="touch-link">返回研究记录</Link>
+      <nav className="research-actions" aria-label="研究与资料导航"><Link href="/research#research-history" className="touch-link">返回研究记录</Link><Link href={`/events?q=${encodeURIComponent(job.code)}`}>查看该股票事件库</Link><Link href={`/events?tab=materials&q=${encodeURIComponent(job.code)}`}>查看该股票资料库</Link></nav>
       <section className="hero hero-small">
         <h1>
           {job.name || (active ? "核对股票中" : "公司名称未核验")} <small>{job.code}</small>
@@ -133,7 +138,7 @@ export function ResearchClient({ initial }: { initial: Data }) {
       </section>
       <section className="research-progress" aria-label="任务进度">
         <div className="research-actions">
-          <strong role="status">{JOB_LABEL[job.status]}</strong>
+          <strong role="status">{job.status === "queued" ? stage : JOB_LABEL[job.status]}</strong>
           <span>
             {data.total} 份资料 ·{" "}
             {data.counts.find((c) => c.status === "done")?.count ?? 0} 份已分析
@@ -239,11 +244,7 @@ export function ResearchClient({ initial }: { initial: Data }) {
                 <StatusBadge status={event.conclusion.status} />
               ) : (
                 <span className="badge badge-unverified">
-                  {event.relationStatus === "failed"
-                    ? "关系待核实"
-                    : active
-                      ? "初步提取 · 关系分析中"
-                      : "初步提取 · 关系未核验"}
+                  {`初步提取 · ${RELATION_STATE_LABEL[event.relationStatus] ?? "等待核验"}`}
                 </span>
               )}
               <span className="tag">自动分析</span>

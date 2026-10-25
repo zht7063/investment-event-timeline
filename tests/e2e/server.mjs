@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, execFileSync } from "node:child_process";
 
 const directory = mkdtempSync(join(tmpdir(), "evt-e2e-"));
 const model = createServer(async (req, res) => {
@@ -147,6 +147,10 @@ const model = createServer(async (req, res) => {
   );
 });
 await new Promise((resolve) => model.listen(0, "127.0.0.1", resolve));
+
+execFileSync(process.execPath, ['--import', 'tsx', 'tests/fixtures/library.ts'], {
+  stdio: 'inherit', env: {...process.env, DATABASE_PATH: join(directory, 'app.db')},
+});
 
 const child = spawn(
   process.execPath,

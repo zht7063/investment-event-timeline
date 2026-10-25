@@ -333,3 +333,15 @@ button.research-retry { min-height: 36px; padding-block: .2rem; }
 .research-document-meta { display: block; margin: .3rem 0 0 1rem; }
 
 .research-stop { margin-inline-start: auto; }
+
+/* Library shares the existing paper, type and spacing system. */
+.library-tabs { border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.library-tabs a { padding: 10px 4px; }
+.library-tabs a[aria-current="page"] { color: var(--ink); font-weight: 700; text-decoration-thickness: 3px; }
+.research-document a, .research-document li, .detail blockquote { overflow-wrap: anywhere; }
+.library-filters label { min-width: 0; }
+.library-filters select, .library-filters input { max-width: 100%; }
+@media (max-width: 640px) {
+  .library-filters { align-items: stretch; }
+  .library-filters label, .library-filters input, .library-filters select { width: 100%; }
+}
