@@ -7,7 +7,7 @@
 ```bash
 # 环境要求：Node 24+
 cp .local.env .env   # 编辑 .env 填写必要变量
-npm install
+npm ci
 npm run build
 npm start            # http://localhost:3000
 ```
@@ -45,7 +45,7 @@ curl -X POST http://localhost:3000/api/demo/reset -H "Authorization: Bearer <ADM
 - **结论变化**：更新、否认、更正、过期均改变结论，有版本历史
 - **截至某时**：回看过去任一时点的结论，后补资料不泄漏到早期
 - **关联标的**：本地关注清单，行情背景（不作证据）
-- **数据同步**：iFinD 公告/新闻、扶摇个股新闻，定时同步和手动触发
+- **数据同步**：iFinD 公告/新闻、扶摇个股新闻，定时同步和手动触发；来源页可用管理口令批量分析、重试失败资料。已分析资料需确认归并才进入事件列表
 - **导入**：人工粘贴文本，模型抽取论断并校验原文引用
 
 ## 技术栈
@@ -90,17 +90,24 @@ docs/              # 计划、AI 记录、测试说明
 ### 直接运行（推荐）
 
 ```bash
+npm ci
 npm run build
-# systemd 或直接运行
-sudo cp deploy/evt-timeline.service /etc/systemd/system/
-sudo systemctl enable --now evt-timeline
+npm start
 
-# 定时同步（每 30 分钟）
-crontab -e
-# */30 * * * * cd /path/to/project && npm run sync >> /tmp/evt-sync.log 2>&1
+# 或安装用户 systemd 服务及同步 timer（以服务所属用户执行，不加 sudo）
+# 从旧 cron 升级时，先移除本项目的旧同步条目，避免重复调度。
+bash deploy/setup.sh /absolute/path/to/project
+# 可配置 PORT、BIND_HOST、SYNC_INTERVAL_MINUTES（默认 3000、0.0.0.0、30）
+# 如需退出登录后持续运行，由服务器管理员启用该用户的 linger。
+
+# 在线一致性备份（包含 WAL 中已提交的数据）
+npm run backup
 ```
 
-### Docker
+部署脚本生成 `systemd --user` 单元，并使用 timer 定时同步；日志由 journal 管理。
+测试机旧部署目前仍使用 cron，本次新脚本尚未安装。上线核对和回滚步骤见 `docs/release-readiness.md`。
+
+### Docker（配置已补齐，尚未实测镜像）
 
 ```bash
 docker build -t evt-timeline .
@@ -114,7 +121,7 @@ docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-
 - 不做全市场资讯平台、用户系统、持仓管理、交易或投资建议
 - 不预测涨跌，不给出买卖建议
 - 来源等级只用于排序和规则，不换算成真实性概率
-- Playwright 冒烟测试只覆盖页面能否打开和导航（6 项，2026-10-25 在本机通过），不含导入→关联→撤销的完整链路；运行前需 `npm run build`，并安装浏览器：`npx playwright install chromium`
+- Playwright 使用临时数据库和本地模型替身，覆盖页面冒烟、导入→分析→归并→历史回看→撤销、待分析入口与管理员批量分析；运行前需 `npm run build`，并安装浏览器：`npx playwright install chromium`
 
 ## 文档
 
@@ -125,19 +132,14 @@ docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-
 - [已知缺陷与修复记录](docs/known-bugs.md)
 - [真实 API 测试报告](docs/api-test-report-2026-10-25.md)
 
-> 以下 systemd 和 cron 配置尚未在目标机器上执行过，首次部署请逐步验证。
->
-> 真实 API 验证结果来自用户本机（macOS），本服务器尚未执行同步。详见 `docs/api-test-report-2026-10-25.md`。
-- Playwright 冒烟测试只覆盖页面能否打开和导航（6 项，2026-10-25 在本机通过），不含导入→关联→撤销的完整链路；运行前需 `npm run build`，并安装浏览器：`npx playwright install chromium`
+测试机已部署并完成真实同步，本轮只读复核正常；本次代码修复尚未发布。当前部署状态、演示版边界与片段证据说明见 [上线前收尾清单](docs/release-readiness.md)。
 
 ## 未做事项
 
 以下是实施计划中提到但本次未实现或部分实现的内容：
 
-- 访客会话隔离、请求限流、模型调用配额：公开实例依赖管理员重置
+- 访客会话隔离、请求限流、模型调用配额：演示版按用户决定不实施，保留访客公开导入和分析
 - 模型润色结论摘要：仅使用模板生成，未接入模型润色
 - 多标的同步验证：真实 API 仅覆盖 `300308.SZ`，多标的、分页、限流场景未验证
-- Playwright 完整链路测试：冒烟 6 项通过，但未覆盖导入→关联→撤销端到端
-- `/api/prices` 自动化测试：仅有人工验证
 - 负载测试、无障碍自动化测试
 - 演示视频
