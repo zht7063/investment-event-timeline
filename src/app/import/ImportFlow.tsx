@@ -44,7 +44,7 @@ async function call<T>(url: string, init?: RequestInit): Promise<{ ok: true; dat
 
 const errText = (e: ApiError) => `${e.message}${e.issues?.length ? `：${e.issues.map((i) => `${i.path || "请求"} ${i.message}`).join("；")}` : ""}（${e.code}）`;
 
-export function ImportFlow({ sources, documents, events }: { sources: Source[]; documents: Doc[]; events: EventOpt[] }) {
+export function ImportFlow({ sources, documents, events, initialDocId }: { sources: Source[]; documents: Doc[]; events: EventOpt[]; initialDocId?: string }) {
   const router = useRouter();
   const [step, setStep] = useState<"form" | "analyze" | "done">("form");
   const [doc, setDoc] = useState<{ documentId: string; decision: string } | null>(null);
@@ -55,6 +55,24 @@ export function ImportFlow({ sources, documents, events }: { sources: Source[]; 
   const [sourceMode, setSourceMode] = useState<"existing" | "new">("existing");
   const [result, setResult] = useState<{ eventId: string; changed: boolean } | null>(null);
   const [subject, setSubject] = useState("");
+
+  // BUG-1 fix: when navigating from sources page with ?doc=<id>, load that document directly
+  useEffect(() => {
+    if (!initialDocId) return;
+    let live = true;
+    (async () => {
+      const p = await call<Preview>(`/api/documents/${encodeURIComponent(initialDocId)}/analyze`);
+      if (!live) return;
+      if (p.ok) {
+        setDoc({ documentId: initialDocId, decision: "duplicate" });
+        setPreview(p.data);
+        setStep("analyze");
+      } else {
+        setError(`无法加载资料：${errText(p.error)}`);
+      }
+    })();
+    return () => { live = false; };
+  }, [initialDocId]);
 
   async function submit(form: FormData) {
     setError(null);

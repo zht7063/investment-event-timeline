@@ -14,6 +14,13 @@ export type SyncRunRow = {
   status: string; added: number; duplicates: number; error: string | null;
 };
 
+export type PendingDoc = {
+  id: string; title: string; source_name: string; analysis_status: string;
+  published_at: string | null; fetched_at: string;
+  /** latest version id for retry */
+  version_id: string;
+};
+
 const ACCESS_LABEL: Record<string, string> = {
   constructed: "构造演示数据",
   live: "真实接口",
@@ -110,6 +117,100 @@ export function SourcesClient({ sources, runs, now }: { sources: SourceRow[]; ru
             </li>
           );
         })}
+      </ul>
+    </>
+  );
+}
+
+
+export function PendingDocuments({ docs, }: { docs: PendingDoc[] }) {
+  const [token, setToken] = useState("");
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const router = useRouter();
+
+  async function batchAnalyze() {
+    if (!token.trim()) return setMsg({ ok: false, text: "请先填写管理口令。" });
+    setBusy("batch");
+    setMsg(null);
+    try {
+      const res = await fetch("/api/sources/analyze-pending", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token.trim()}` },
+        body: JSON.stringify({}),
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) setMsg({ ok: false, text: d?.error?.message ?? `请求失败（${res.status}）` });
+      else setMsg({ ok: true, text: `批量分析完成：成功 ${d.analyzed}，失败 ${d.failed}，共 ${d.total} 条` });
+      router.refresh();
+    } catch {
+      setMsg({ ok: false, text: "网络错误" });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function retryOne(versionId: string) {
+    if (!token.trim()) return setMsg({ ok: false, text: "请先填写管理口令。" });
+    setBusy(versionId);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/sources/analyze-pending", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${token.trim()}` },
+        body: JSON.stringify({ versionId }),
+      });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) setMsg({ ok: false, text: d?.error?.message ?? `请求失败（${res.status}）` });
+      else setMsg({ ok: d.analyzed > 0, text: d.analyzed ? "分析成功" : "分析失败，请检查模型配置" });
+      router.refresh();
+    } catch {
+      setMsg({ ok: false, text: "网络错误" });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  if (!docs.length) return <p className="empty">没有待处理的同步资料。</p>;
+
+  const hasPending = docs.some((d) => d.analysis_status === "pending");
+  const hasFailed = docs.some((d) => d.analysis_status === "failed");
+
+  return (
+    <>
+      {(hasPending || hasFailed) && (
+        <label className="admin-token">
+          <span>管理口令（分析需要）</span>
+          <input type="password" value={token} onChange={(e) => setToken(e.target.value)} autoComplete="off" />
+        </label>
+      )}
+      {msg && <p className={msg.ok ? "meta" : "error"} role={msg.ok ? "status" : "alert"}>{msg.text}</p>}
+      {hasPending && (
+        <button type="button" className="ghost" disabled={busy !== null} onClick={batchAnalyze}>
+          {busy === "batch" ? "分析中…" : `批量分析待处理（最多 20 条）`}
+        </button>
+      )}
+      <ul className="instruments">
+        {docs.map((d) => (
+          <li key={d.id}>
+            <strong>{d.title}</strong>
+            <span className={`tag${d.analysis_status === "failed" ? " tag-warn" : ""}`}>
+              {d.analysis_status === "done" ? "已分析" : d.analysis_status === "failed" ? "分析失败" : "待分析"}
+            </span>
+            <p className="meta">
+              {d.source_name} · 披露 {formatTime(d.published_at, "day")} · 抓取 {formatTime(d.fetched_at)}
+              {" · "}<a href={`/import?doc=${d.id}`}>分析与归并</a>
+              {d.analysis_status === "failed" && (
+                <>
+                  {" · "}
+                  <button type="button" className="ghost" disabled={busy !== null} onClick={() => retryOne(d.version_id)}>
+                    {busy === d.version_id ? "重试中…" : "重试分析"}
+                  </button>
+                </>
+              )}
+            </p>
+          </li>
+        ))}
       </ul>
     </>
   );

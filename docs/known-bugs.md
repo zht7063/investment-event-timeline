@@ -1,0 +1,55 @@
+# 已知缺陷与待修事项
+
+记录于 2026-10-25。以下内容来自读代码，尚未在浏览器里复现；修复前先写复现步骤或测试。
+
+## BUG-1 来源页"分析与归并"链接是死链 (已修复)
+
+- 位置：`src/app/sources/page.tsx:39` 链接到 `/import?doc=<id>`。
+- 现象（代码推断）：`src/app/import/page.tsx` 和 `ImportFlow.tsx` 都不读 `doc` 参数，点进去是空白导入表单，不会定位到该资料。
+- 影响：来源页列出的待分析、分析失败资料无法通过界面分析或重试。
+- 修复方向：导入页读取 `doc`，定位到该资料并展示当前分析状态；也可以直接在来源页提供分析入口（见下文方案）。
+
+## BUG-2 同步从不重新分析已有的待分析或失败版本 (已修复)
+
+- 位置：`src/server/sources/sync.ts:129-141`。重复版本在分析之前 `continue`，分析名额 `budget` 只用于新入库的版本。
+- 影响：
+  - 真实同步后 22 条版本一直是 `pending`，cron 不会消化它们。
+  - 1 条 iFinD 公告分析失败（`AI_UPSTREAM`），之后同步都把它当重复，不会重试。
+  - `sync.ts:17` 的注释写着"可从来源页分析"，但入口被 BUG-1 堵死。
+- 当前唯一办法：直接调用 `POST /api/documents/:id/analyze`。
+
+## 相关风险（不是本次缺陷，修复时一并注意）
+
+- `POST /api/documents/:id/analyze` 没有鉴权，任何人可触发付费模型调用。新增的批量分析和重试入口必须要求管理口令，不要复用这个无鉴权路径。
+
+## 已定方案
+
+| 项 | 决定 |
+| --- | --- |
+| 自动分析上限 | `MAX_ANALYZE_PER_RUN` 从 5 提高到 10（每来源每轮） |
+| 积压消化 | 同步时先处理已有的 `pending` 版本，再处理新入库版本，总数仍受上限约束 |
+| 批量分析 | 来源页加"批量分析待处理"按钮，用管理口令保护，与手动同步一致 |
+| 失败重试 | 来源页加单条重试按钮，与批量按钮同一套入口；同步不自动重试 `failed` |
+
+说明：同步不自动重试 `failed`，是为了模型持续故障时不反复花钱。
+
+## 修复内容
+
+- BUG-1：`import/page.tsx` 读取 `?doc=<id>` 参数，传给 `ImportFlow`；`ImportFlow` 收到后通过 `GET /api/documents/:id/analyze` 加载预览并直接进入分析步骤。
+- BUG-2：`sync.ts` 在导入循环之后、写结果之前，查询本来源的 `pending` 版本并在剩余名额内分析。`failed` 版本不自动重试。`MAX_ANALYZE_PER_RUN` 从 5 提高到 10。
+- 新增 `POST /api/sources/analyze-pending`：管理口令保护，支持批量分析 pending（最多 20 条）和单条重试（含 failed）。
+- `SourcesClient.tsx` 新增 `PendingDocuments` 组件：批量分析按钮、单条重试按钮。
+- `repo.ts` `listPendingDocuments` 新增返回 `version_id`。
+- 集成测试：pending 版本消化、failed 版本不自动重试。
+
+## 修复验收
+
+- BUG-1：从来源页点击某条待处理资料，能进入对应资料的分析界面。
+- BUG-2：构造 `pending` 版本后运行同步，名额内的 `pending` 被分析；`failed` 版本不被同步自动重试，只能通过按钮重试。
+- 批量和单条入口无管理口令时返回 401 或 403，不调用模型。
+- 测试优先：先写失败的集成测试，再修（`tests/integration/sync.test.ts` 已有同步测试的夹具）。
+
+## 仍待决策（不是 bug）
+
+- `SYNC_CODES` 是否提供默认值（目前倾向保持显式配置）。
+- iFinD 公告只有片段，是否足以支撑"已有证据支持"，需要抽样对照原文。

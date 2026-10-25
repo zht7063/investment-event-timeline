@@ -303,7 +303,7 @@ export function listSyncRuns(db = getDb()) {
 export function listPendingDocuments(db = getDb()) {
   return plain(
     db.prepare(
-      `select d.id, d.title, s.name as source_name, v.analysis_status, v.published_at, v.fetched_at
+      `select d.id, d.title, s.name as source_name, v.analysis_status, v.published_at, v.fetched_at, v.id as version_id
        from documents d join sources s on s.id = d.source_id
        join document_versions v on v.document_id = d.id
        where v.id = (select v2.id from document_versions v2 where v2.document_id = d.id order by v2.fetched_at desc, v2.rowid desc limit 1)
@@ -311,6 +311,6 @@ export function listPendingDocuments(db = getDb()) {
        order by v.fetched_at desc limit 50`,
     ).all(),
   ) as {
-    id: string; title: string; source_name: string; analysis_status: string; published_at: string | null; fetched_at: string;
+    id: string; title: string; source_name: string; analysis_status: string; published_at: string | null; fetched_at: string; version_id: string;
   }[];
 }

@@ -4,7 +4,9 @@ import { ImportFlow } from "./ImportFlow";
 
 export const dynamic = "force-dynamic";
 
-export default function ImportPage() {
+export default async function ImportPage({ searchParams }: PageProps<"/import">) {
+  const sp = await searchParams;
+  const initialDocId = typeof sp.doc === "string" ? sp.doc.trim() : undefined;
   const db = ensureSeeded();
   return (
     <>
@@ -19,6 +21,7 @@ export default function ImportPage() {
         sources={listSources(db).map((s) => ({ id: s.id, name: s.name, tier: s.tier }))}
         documents={listDocuments(db)}
         events={listEventOptions(db)}
+        initialDocId={initialDocId}
       />
     </>
   );

@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { formatTime } from "@/domain/time";
 import { listPendingDocuments, listSources, listSyncRuns } from "@/server/repo";
 import { ensureSeeded } from "@/server/seed";
 import { registerProviders, syncCodes } from "@/server/sources/sync";
-import { SourcesClient } from "./SourcesClient";
+import { SourcesClient, PendingDocuments, type PendingDoc } from "./SourcesClient";
 
 export const dynamic = "force-dynamic";
 
@@ -25,23 +24,7 @@ export default function SourcesPage() {
       <SourcesClient sources={listSources(db)} runs={listSyncRuns(db)} now={new Date().toISOString()} />
 
       <h2>同步收录、尚未归并的资料</h2>
-      {pending.length === 0 ? (
-        <p className="empty">没有待处理的同步资料。</p>
-      ) : (
-        <ul className="instruments">
-          {pending.map((d) => (
-            <li key={d.id}>
-              <strong>{d.title}</strong>
-              <span className={`tag${d.analysis_status === "failed" ? " tag-warn" : ""}`}>
-                {d.analysis_status === "done" ? "已分析" : d.analysis_status === "failed" ? "分析失败" : "待分析"}
-              </span>
-              <p className="meta">
-                {d.source_name} · 披露 {formatTime(d.published_at, "day")} · 抓取 {formatTime(d.fetched_at)} · <Link href={`/import?doc=${d.id}`}>分析与归并</Link>
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+      <PendingDocuments docs={pending as PendingDoc[]} />
     </>
   );
 }
