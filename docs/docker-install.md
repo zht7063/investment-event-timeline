@@ -1,6 +1,6 @@
 # Docker 安装与更新
 
-适用于单机演示部署，应用与定时同步共享一个 SQLite 数据卷。
+适用于单机演示部署，网页、定时同步和按需研究 worker 共享一个 SQLite 数据卷。
 
 ## 安装
 
@@ -35,7 +35,7 @@ curl --fail http://127.0.0.1:3000/api/health
 ## 日常命令
 
 ```bash
-docker compose logs --tail=100 web sync
+docker compose logs --tail=100 web sync research
 docker compose restart
 docker compose exec web npm run backup
 mkdir -p backups
@@ -64,10 +64,10 @@ docker image tag evt-timeline:previous evt-timeline:local
 docker compose up -d --no-build --force-recreate
 ```
 
-恢复数据库必须先停掉两个服务。以 `backups/app-example.db` 为例：
+恢复数据库必须先停掉全部三个服务，避免研究 worker 继续写入。以 `backups/app-example.db` 为例：
 
 ```bash
-docker compose stop web sync
+docker compose stop web sync research
 docker compose run --rm --no-deps -v "$PWD/backups:/restore:ro" web \
   sh -c 'rm -f /app/data/app.db-wal /app/data/app.db-shm && cp /restore/app-example.db /app/data/app.db'
 docker compose up -d --no-build
@@ -75,10 +75,35 @@ docker compose up -d --no-build
 
 恢复前应额外保留当前数据库备份，替换示例文件名为实际备份文件。
 
+## 小内存服务器：先构建，再传输镜像
+
+生产编译的内存需求高于日常运行。约 2 GB 内存的测试机推荐在资源充足、与服务器架构一致的机器构建，再加载到服务器；不要在服务失去响应时重复启动构建。
+
+构建机执行（`.dockerignore` 已排除运行凭证和数据库）：
+
+```bash
+docker build -t evt-timeline:release .
+docker save evt-timeline:release | gzip -1 > /tmp/evt-timeline-image.tar.gz
+scp /tmp/evt-timeline-image.tar.gz 用户@服务器:/tmp/
+```
+
+服务器先按上文备份现有数据库及镜像，再执行：
+
+```bash
+docker load -i /tmp/evt-timeline-image.tar.gz
+docker tag evt-timeline:release evt-timeline:local
+cd /opt/evt-timeline
+docker compose up -d --no-build
+docker compose ps
+curl --fail http://127.0.0.1:3000/api/health
+```
+
+源码、Compose 配置与镜像版本应保持一致；运行凭证仅保存在服务器 `.env`，不得打入镜像。首次安装没有旧数据库或旧镜像时无需做旧版本备份，启动并验收后应验证一次在线备份。
+
 ## 后续绑定域名
 
-本次测试服务器使用宿主机 Caddy 接收 80 端口请求，容器仅监听
-`127.0.0.1:3000`。如果服务器已有透明代理，采用这种方式可避免 Docker
+旧演示部署使用宿主机 Caddy 接收 80 端口请求，容器仅监听
+`127.0.0.1:3000`；新测试服务器当前直接提供 3000 端口，见 [部署记录](research-deployment-2026-10-26.md)。如果服务器已有透明代理，采用 Caddy 方式可避免 Docker
 直接公开端口与代理路由冲突。无域名时可先安装 HTTP 入口：
 
 ```bash
