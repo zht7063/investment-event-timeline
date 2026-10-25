@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS sources (
   name TEXT NOT NULL,
   kind TEXT NOT NULL CHECK (kind IN ('regulator','issuer','media','research','rumor','market_data','manual')),
   tier INTEGER NOT NULL CHECK (tier BETWEEN 1 AND 5),
-  access_mode TEXT NOT NULL CHECK (access_mode IN ('constructed','live','unavailable')),
+  access_mode TEXT NOT NULL CHECK (access_mode IN ('constructed','live','manual','unavailable')),
   last_success_at TEXT,
   last_error TEXT
 );
@@ -27,11 +27,13 @@ CREATE TABLE IF NOT EXISTS document_versions (
   body TEXT NOT NULL,
   content_hash TEXT NOT NULL,
   published_at TEXT,
+  published_precision TEXT CHECK (published_precision IN ('day','month','quarter','year','datetime')),
   source_updated_at TEXT,
   fetched_at TEXT NOT NULL,
   previous_version_id TEXT REFERENCES document_versions(id),
   analysis_status TEXT NOT NULL DEFAULT 'pending' CHECK (analysis_status IN ('pending','done','failed')),
   analysis_error TEXT,
+  analysis TEXT, -- JSON: extracted event features + rejected claims, for the import preview
   UNIQUE (document_id, content_hash)
 );
 

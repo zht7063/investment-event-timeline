@@ -1,4 +1,5 @@
 import { byWeight, independentOrigins, isSubstantive } from "./evidence";
+import { formatTime } from "./time";
 import { CATEGORY_LABEL, STATUS_LABEL } from "./types";
 import type { ConclusionDraft, ConflictCard, EvidenceItem, Status, SummaryLine } from "./types";
 
@@ -76,7 +77,7 @@ export function computeConclusion(all: EvidenceItem[], asOf: string): Conclusion
     }
   }
   for (const e of expired) {
-    summary.push({ text: `已失效：${e.content}（有效期至 ${e.validUntil}）`, evidenceIds: [e.id] });
+    summary.push({ text: `已失效：${e.content}（有效期至 ${formatTime(e.validUntil)}，北京时间）`, evidenceIds: [e.id] });
   }
   if (items.length === 0) missing.push("尚无任何关联证据");
 

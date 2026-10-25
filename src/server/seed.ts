@@ -39,7 +39,7 @@ export function resetToSeed(db: DatabaseSync, now = new Date().toISOString(), se
     for (const s of seed.sources) src.run(s.id, s.name, s.kind, s.tier);
     const doc = db.prepare("insert into documents (id, source_id, canonical_key, url, title, reposted_from_id, is_constructed) values (?, ?, ?, ?, ?, ?, 1)");
     const ver = db.prepare(
-      "insert into document_versions (id, document_id, body, content_hash, published_at, fetched_at, analysis_status) values (?, ?, ?, ?, ?, ?, 'done')",
+      "insert into document_versions (id, document_id, body, content_hash, published_at, published_precision, fetched_at, analysis_status) values (?, ?, ?, ?, ?, ?, ?, 'done')",
     );
     const cl = db.prepare(
       `insert into claims (id, version_id, quote, quote_start, category, content, occurred_at, occurred_precision, valid_until, unit, basis, review_status)
@@ -49,7 +49,8 @@ export function resetToSeed(db: DatabaseSync, now = new Date().toISOString(), se
     for (const d of seed.documents) {
       doc.run(d.id, d.source, d.key, d.url ?? null, d.title, d.repostedFrom ?? null);
       const vid = `${d.id}-v1`;
-      ver.run(vid, d.id, d.body, contentHash(d.body), iso(d.published), iso(d.fetched));
+      const pub = parseTime(d.published)!;
+      ver.run(vid, d.id, d.body, contentHash(d.body), pub.iso, pub.precision, iso(d.fetched));
       for (const c of d.claims) {
         const start = d.body.indexOf(c.quote);
         if (start < 0) throw new Error(`seed quote not in body: ${c.id}`);

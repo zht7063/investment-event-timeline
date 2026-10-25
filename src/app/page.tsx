@@ -1,25 +1,51 @@
-import { listEvents } from "@/server/repo";
+import Link from "next/link";
+import { Status, STATUS_LABEL } from "@/domain/types";
+import { formatTime } from "@/domain/time";
+import { searchEvents } from "@/server/repo";
 import { ensureSeeded } from "@/server/seed";
-import { STATUS_LABEL } from "@/domain/types";
+import { EventList } from "./EventList";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const events = listEvents(ensureSeeded());
+export default async function Home({ searchParams }: PageProps<"/">) {
+  const sp = await searchParams;
+  const q = typeof sp.q === "string" ? sp.q.slice(0, 50) : "";
+  const parsedStatus = Status.safeParse(sp.status);
+  const status = parsedStatus.success ? parsedStatus.data : undefined;
+  const { items, total } = searchEvents({ text: q || undefined, status, limit: 100 }, ensureSeeded());
+  const latest = items.reduce<string | null>((m, e) => (e.latest_fetched_at && (!m || e.latest_fetched_at > m) ? e.latest_fetched_at : m), null);
+
   return (
-    <main>
-      <h1>投资事件证据时间线</h1>
-      {events.length === 0 ? (
-        <p>暂无事件。</p>
-      ) : (
-        <ul>
-          {events.map((e) => (
-            <li key={e.id}>
-              {e.title}：{e.status ? STATUS_LABEL[e.status] : "未计算"}
-            </li>
-          ))}
-        </ul>
-      )}
-    </main>
+    <>
+      <section className="hero">
+        <p className="eyebrow">事件索引</p>
+        <h1>每个判断，都能追到原文。</h1>
+        <p className="lede">
+          围绕一个投资事件，查清最初来源、事实变化、证据冲突与当前结论。数据截至 {formatTime(latest)}（最新收录资料的抓取时间）。
+        </p>
+      </section>
+
+      <form className="filters" role="search" method="get">
+        <label>
+          <span>搜索</span>
+          <input name="q" defaultValue={q} placeholder="事件、公司或代码" maxLength={50} />
+        </label>
+        <label>
+          <span>结论状态</span>
+          <select name="status" defaultValue={status ?? ""}>
+            <option value="">全部</option>
+            {Status.options.map((s) => (
+              <option key={s} value={s}>
+                {STATUS_LABEL[s]}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button type="submit">筛选</button>
+        {(q || status) && <Link href="/">清除条件</Link>}
+      </form>
+
+      <EventList items={items} total={total} filtered={Boolean(q || status)} />
+    </>
   );
 }
