@@ -345,3 +345,8 @@ button.research-retry { min-height: 36px; padding-block: .2rem; }
   .library-filters { align-items: stretch; }
   .library-filters label, .library-filters input, .library-filters select { width: 100%; }
 }
+
+.research-history .history-selectable { display: flex; align-items: stretch; gap: .5rem; }
+.history-selectable > a { flex: 1; min-width: 0; }
+.history-select-control { display: flex; align-items: center; justify-content: center; min-width: 44px; cursor: pointer; }
+.history-select-control input { width: 20px; height: 20px; accent-color: var(--accent); }

@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from 'vitest';
 import { openDb, tx } from '@/server/db';
-import { createResearch, saveMaterial, jobById, cancelResearch, retryResearch, researchStatus, claimJob, release, materials, hash } from '@/server/research/store';
+import { createResearch, saveMaterial, jobById, cancelResearch, retryResearch, researchStatus, claimJob, release, materials, hash, deleteResearch, owns } from '@/server/research/store';
 import { writeReport, workOnce } from '@/server/research/worker';
 import { groupAnalyses, groupFingerprint, type Analysis } from '@/server/research/analysis';
 import { backfillLibrary } from '@/server/research/library-index';
@@ -100,4 +100,37 @@ it('failed index writes cannot leave analysis committed without its event',async
  expect(d.prepare('select analysis_status from research_documents where material_id=?').get(id)?.analysis_status).toBe('failed');
  expect(d.prepare('select count(*) as n from research_reports').get()?.n).toBe(0);
  expect(d.prepare('select count(*) as n from research_analysis_cache').get()?.n).toBe(0);
+});
+
+it('batch deletion removes exclusive events and materials but preserves shared and manual data',()=>{
+ const d=db(),a=job(d,'delete-a'),b=job(d,'keep-b');
+ const shared=add(d,a.id,1,true,true,1);add(d,b.id,1,true,true,1);
+ const exclusive=add(d,a.id,2,true,false,1);
+ tx(d,()=>writeReport(a,d));tx(d,()=>writeReport(b,d));
+ d.prepare("insert into events(id,title,event_type,subject_code,matter_key) values('manual-keep','人工事项','other','002230.SZ','manual')").run();
+ d.prepare('insert into research_analysis_cache values(?,?,?,?)').run(exclusive,a.code,'v1','{}');
+ const lease=claimJob(d)!;
+ const result=deleteResearch([a.id,a.id,'missing'],d);
+ expect(result).toEqual({deleted:1,deletedIds:[a.id]});expect(owns(lease,d)).toBe(false);
+ expect(jobById(a.id,d)).toBeUndefined();expect(jobById(b.id,d)).toBeDefined();
+ expect(d.prepare('select id from research_materials where id=?').get(exclusive)).toBeUndefined();
+ expect(d.prepare('select id from research_materials where id=?').get(shared)).toBeDefined();
+ expect(d.prepare('select count(*) as n from research_analysis_cache').get()?.n).toBe(0);
+ expect(libraryEvents({origin:'automatic'},d).total).toBe(1);
+ const id=libraryEvents({origin:'automatic'},d).items[0].id;
+ expect(libraryEventDetail(id,undefined,d)!.research.map(r=>r.jobId)).toEqual([b.id]);
+ expect(d.prepare("select id from events where id='manual-keep'").get()).toBeDefined();
+ deleteResearch([b.id],d);expect(libraryEvents({origin:'automatic'},d).total).toBe(0);expect(libraryMaterials({origin:'automatic'},d).total).toBe(0);
+ expect(deleteResearch([a.id,b.id],d).deleted).toBe(0);expect(d.prepare('pragma foreign_key_check').all()).toEqual([]);
+ expect(backfillLibrary(d).associations).toBe(0);
+});
+it('deleting a running analysis fences its late result',async()=>{
+ const d=db(),j=job(d,'inflight');add(d,j.id,99,false);d.prepare("update research_jobs set phase='analyze' where id=?").run(j.id);
+ await workOnce(d,{extract:async()=>{deleteResearch([j.id],d);return {relevance:'irrelevant',relevanceQuote:'',reason:'test',events:[],warnings:[]};}});
+ expect(jobById(j.id,d)).toBeUndefined();expect(libraryEvents({},d).total).toBe(0);expect(libraryMaterials({},d).total).toBe(0);
+});
+it('batch deletion rolls back all records if a later delete fails',()=>{
+ const d=db(),a=job(d,'rollback-a'),b=job(d,'rollback-b');add(d,a.id,1);add(d,b.id,2);tx(d,()=>writeReport(a,d));tx(d,()=>writeReport(b,d));
+ d.exec(`create trigger block_delete before delete on research_jobs when old.id='${b.id}' begin select raise(abort,'test'); end;`);
+ expect(()=>deleteResearch([a.id,b.id],d)).toThrow();expect(jobById(a.id,d)).toBeDefined();expect(libraryEvents({},d).total).toBe(4);expect(libraryMaterials({},d).total).toBe(2);
 });

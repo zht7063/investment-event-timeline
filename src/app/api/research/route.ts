@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
 import { ResearchInput } from "@/domain/research";
-import { fail, readJson } from "@/server/api";
-import { createResearch } from "@/server/research/store";
+import { fail, readJson, handleError } from "@/server/api";
+import { createResearch, deleteResearch } from "@/server/research/store";
 export const dynamic = "force-dynamic";
 export async function POST(req: Request) {
   const p = await readJson(req, ResearchInput);
@@ -27,4 +27,12 @@ export async function POST(req: Request) {
       error instanceof Error ? error.message : "无法创建研究任务",
     );
   }
+}
+
+const DeleteBody = z.object({ ids: z.array(z.uuid()).min(1).max(100) }).strict();
+export async function DELETE(req: Request) {
+  const parsed = await readJson(req, DeleteBody);
+  if (!parsed.ok) return parsed.res;
+  try { return Response.json(deleteResearch(parsed.data.ids)); }
+  catch (error) { return handleError(error); }
 }

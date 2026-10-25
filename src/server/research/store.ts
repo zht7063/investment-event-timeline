@@ -269,3 +269,34 @@ export function researchStatus(id: string, db = getDb(), offset = 0) {
     report: report ? { ...report, body: { ...JSON.parse(report.body), events: (JSON.parse(report.body).events as ReportEvent[]).map(event => ({ ...event, relationStatus: relationState(id, event, db) })) } } : null,
   };
 }
+
+/** Delete only the requested studies and their exclusive artifacts, in one transaction.
+ * Deleting the owner row fences any in-flight worker before it can commit results.
+ */
+export function deleteResearch(ids: string[], db = getDb()) {
+  return tx(db, () => {
+    const deletedIds: string[] = [];
+    for (const id of new Set(ids)) {
+      if (!jobById(id, db)) continue;
+      const materialIds = db.prepare('select material_id from research_documents where job_id=?').all(id);
+      const eventIds = db.prepare('select event_id from library_event_research where job_id=?').all(id);
+      db.prepare("update research_jobs set status='cancelled',lease_token=null,lease_until=null where id=?").run(id);
+      // Removing the association cascades its material links, but not shared events.
+      db.prepare('delete from library_event_research where job_id=?').run(id);
+      for (const table of ['research_relation_leases', 'research_relations', 'research_reports', 'research_source_runs', 'research_documents']) {
+        db.prepare(`delete from ${table} where job_id=?`).run(id);
+      }
+      db.prepare('delete from research_jobs where id=?').run(id);
+      for (const row of eventIds) {
+        db.prepare('delete from library_events where id=? and not exists(select 1 from library_event_research r where r.event_id=library_events.id)').run(row.event_id!);
+      }
+      for (const row of materialIds) {
+        if (db.prepare('select 1 from research_documents where material_id=? limit 1').get(row.material_id!)) continue;
+        db.prepare('delete from research_analysis_cache where material_id=?').run(row.material_id!);
+        db.prepare('delete from research_materials where id=?').run(row.material_id!);
+      }
+      deletedIds.push(id);
+    }
+    return { deletedIds, deleted: deletedIds.length };
+  });
+}
