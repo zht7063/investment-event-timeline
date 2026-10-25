@@ -250,9 +250,10 @@ export function researchStatus(id: string, db = getDb(), offset = 0) {
       ...s,
       state: JSON.parse(s.state) as SourceState,
     })),
-    counts,
+    // node:sqlite may return null-prototype rows; React client props require plain objects.
+    counts: counts.map((row) => ({ ...row })),
     total,
-    documents,
+    documents: documents.map((row) => ({ ...row })),
     offset,
     report: report ? { ...report, body: JSON.parse(report.body) } : null,
   };

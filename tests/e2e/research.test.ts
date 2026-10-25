@@ -54,6 +54,11 @@ test("new stock automatically fetches both pages, analyzes and cites conflicting
     r.sources.find((s: { source_id: string }) => s.source_id === "fuyao-news")
       .state.requests,
   ).toBe(2);
+  // Refresh after rows exist, so SSR must serialize SQLite-backed client props.
+  await page.reload();
+  await expect(page.getByText("部分完成", { exact: true })).toBeVisible();
+  await page.getByText("查看 2 条证据与时间线", { exact: true }).click();
+  await expect(page.locator(".research-evidence blockquote")).toHaveCount(2);
   await page.screenshot({
     path: test.info().outputPath("research-desktop.png"),
     fullPage: true,

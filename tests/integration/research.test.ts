@@ -100,6 +100,35 @@ async function drain(d: ReturnType<typeof db>, overrides = {}) {
 }
 
 describe("research validation and provider semantics", () => {
+  it("returns React-serializable records when SQLite rows have null prototypes", () => {
+    const d = db();
+    const job = createResearch(input, "serializable-status", d);
+    saveMaterial(job.id, item("serialization"), "inside", d);
+    // Match newer node:sqlite row objects even on older development runtimes.
+    const prepare = d.prepare.bind(d);
+    const spy = vi.spyOn(d, "prepare").mockImplementation((sql) => {
+      const statement = prepare(sql);
+      return new Proxy(statement, {
+        get(target, key) {
+          if (key === "all")
+            return (...args: Parameters<typeof statement.all>) =>
+              target.all(...args).map((row) => Object.assign(Object.create(null), row));
+          const value = Reflect.get(target, key);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+    });
+    try {
+      const status = researchStatus(job.id, d)!;
+      expect(status.total).toBe(1);
+      expect(status.documents[0].title).toBe("中际旭创公告");
+      for (const row of [...status.counts, ...status.documents])
+        expect(Object.getPrototypeOf(row)).toBe(Object.prototype);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("rejects invalid dates, reversed ranges and non-stock input", () => {
     expect(
       ResearchInput.safeParse({ ...input, start: "2026-02-30" }).success,
