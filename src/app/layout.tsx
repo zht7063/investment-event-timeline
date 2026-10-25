@@ -20,6 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <nav aria-label="主导航">
             <Link href="/">事件</Link>
             <Link href="/import">导入资料</Link>
+            <Link href="/sources">数据源</Link>
           </nav>
         </header>
         <main id="main">{children}</main>

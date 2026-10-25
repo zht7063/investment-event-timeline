@@ -6,6 +6,7 @@ import { CATEGORY_LABEL, RELATION_LABEL, TIER_LABEL, type ConflictCard, type Sum
 import { getEventDetail, type EvidenceRow } from "@/server/repo";
 import { ensureSeeded } from "@/server/seed";
 import { RevokeButton } from "./RevokeButton";
+import { MarketBackground } from "./MarketBackground";
 
 export const dynamic = "force-dynamic";
 
@@ -128,7 +129,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
             </li>
           ))}
         </ul>
-        <p className="hint">行情只作背景，不作为事件真假的证据。行情接入见数据源页。</p>
+        <MarketBackground codes={d.instruments.map((i) => i.code)} />
       </section>
 
       <section aria-labelledby="tl-h">
