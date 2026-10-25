@@ -30,6 +30,9 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
   const byId = new Map(evidence.map((e) => [e.id, e]));
   const byClaim = new Map(evidence.map((e) => [e.claimId, e]));
   const visible = evidence.filter((e) => e.fetchedAt <= d.asOf && e.createdAt <= d.asOf);
+  const latestFetch = visible.reduce<string | null>((m, e) => (!m || e.fetchedAt > m ? e.fetchedAt : m), null);
+  const STALE_MS = 7 * 86400_000;
+  const stale = !d.isHistorical && event.is_constructed !== 1 && latestFetch && Date.now() - Date.parse(latestFetch) > STALE_MS;
   const status = (e: EvidenceRow) =>
     e.revokedAt && e.revokedAt <= d.asOf
       ? "已撤销"
@@ -87,6 +90,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
           截至 {formatTime(d.asOf)}
           {d.isHistorical ? "（历史回看：只使用当时已抓取的证据）" : ""}
         </p>
+        {stale && <p className="stale-banner">数据可能已过期：最近一条证据的抓取时间为 {formatTime(latestFetch)}，超过 7 天没有新数据。结论保留旧值，接口失败不等于事件失效。</p>}
         <Summary lines={conclusion.summary} byId={byId} />
         <h3>仍不确定</h3>
         {conclusion.missing.length ? (

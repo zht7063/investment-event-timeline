@@ -227,3 +227,16 @@ legend { font: 600 0.8rem var(--sans); letter-spacing: 0.2em; color: var(--accen
   .node::before { left: -1.25rem; }
   .node-time { position: static; display: block; text-align: left; width: auto; margin-bottom: 0.2rem; }
 }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.6rem; }
+  .filters { flex-direction: column; }
+  .filters label { flex: 1 1 auto; }
+  .conflict-sides { grid-template-columns: 1fr; }
+  .asof { flex-direction: column; }
+  .section-head { flex-direction: column; align-items: start; gap: 0.4rem; }
+  .event-list { grid-template-columns: 1fr; }
+  .row { grid-template-columns: 1fr; }
+  .watch-head { flex-direction: column; align-items: start; }
+  .source-head { flex-direction: column; align-items: start; }
+}
