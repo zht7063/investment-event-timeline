@@ -18,17 +18,17 @@ test("health check returns ok", async ({ request }) => {
   expect(body).toMatchObject({ ok: true, db: "ok" });
 });
 
-test("home page loads with seed events", async ({ page }) => {
+test("event library loads with seed events", async ({ page }) => {
   // Warm the server with a cheap hit first so conclusion recompute is done.
   await page.request.get("/api/health");
-  await page.goto("/", nav);
+  await page.goto("/events", nav);
   await expect(page.locator("h1")).toContainText("每个判断", { timeout: 30_000 });
   const rows = page.locator("a[href*='/events/']");
   await expect(rows.first()).toBeVisible({ timeout: 15_000 });
 });
 
 test("event detail page shows conclusion and evidence", async ({ page }) => {
-  await page.goto("/", nav);
+  await page.goto("/events", nav);
   const firstLink = page.locator("a[href*='/events/']").first();
   await expect(firstLink).toBeVisible({ timeout: 30_000 });
   await firstLink.click();
@@ -48,7 +48,7 @@ test("import page loads", async ({ page }) => {
 });
 
 test("status filter submits the selected state", async ({ page }) => {
-  await page.goto("/", nav);
+  await page.goto("/events", nav);
   await page.getByLabel("结论状态").selectOption("expired");
   await page.getByRole("button", { name: "筛选", exact: true }).click();
   await expect(page).toHaveURL(/status=expired/);
@@ -58,7 +58,7 @@ test("status filter submits the selected state", async ({ page }) => {
 
 test("main pages fit a mobile viewport", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
-  for (const path of ["/", "/sources", "/import"]) {
+  for (const path of ["/", "/research", "/events", "/sources", "/import"]) {
     await page.goto(path, nav);
     await expect(page.locator("h1")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { openDb } from "@/server/db";
 import {
   createResearch,
+  listResearch,
   jobById,
   claimJob,
   cancelResearch,
@@ -41,6 +42,25 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 const input = { code: "300308.SZ", start: "2026-09-01", end: "2026-09-07" };
+it("research history is bounded, newest-first and recoverable beyond page one", () => {
+  const d = db();
+  expect(listResearch(99, d)).toMatchObject({ items: [], total: 0, page: 1, pages: 1 });
+  const ids: string[] = [];
+  for (let n = 0; n < 12; n++) {
+    const job = createResearch(input, `history-${n}`, d);
+    ids.push(job.id);
+    d.prepare("update research_jobs set created_at=? where id=?").run(new Date(1_700_000_000_000 + n * 1000).toISOString(), job.id);
+  }
+  const first = listResearch(1, d);
+  const last = listResearch(99, d);
+  expect(first.items.map((j) => j.id)).toEqual(ids.slice(2).reverse());
+  expect(last).toMatchObject({ total: 12, page: 2, pages: 2 });
+  expect(last.items.map((j) => j.id)).toEqual(ids.slice(0, 2).reverse());
+  expect(listResearch(-1, d).page).toBe(1);
+  expect(listResearch(Infinity, d).page).toBe(1);
+  expect(first.items[0]).not.toHaveProperty("request_key");
+  expect(first.items[0]).not.toHaveProperty("lease_token");
+});
 const instrument = { code: "300308.SZ", name: "中际旭创" };
 const item = (
   key: string,

@@ -15,6 +15,16 @@ const iso = () => new Date().toISOString();
 export const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
 export const LEASE_MS = 120_000;
+export function listResearch(page = 1, db = getDb()) {
+  const size = 10;
+  const { total } = db.prepare("select count(*) as total from research_jobs").get() as { total: number };
+  const pages = Math.max(1, Math.ceil(total / size));
+  const current = Math.min(pages, Math.max(1, Number.isSafeInteger(page) ? page : 1));
+  const items = db.prepare(
+    "select id, code, name, start_day, end_day, status, updated_at from research_jobs order by created_at desc, id desc limit ? offset ?",
+  ).all(size, (current - 1) * size) as Pick<ResearchJob, "id" | "code" | "name" | "start_day" | "end_day" | "status" | "updated_at">[];
+  return { items, total, page: current, pages };
+}
 export function createResearch(raw: unknown, requestKey: string, db = getDb()) {
   const input = ResearchInput.parse(raw);
   return tx(db, () => {

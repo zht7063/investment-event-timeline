@@ -58,7 +58,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/ev
   return (
     <article className="detail">
       <p className="crumbs">
-        <Link href="/">事件</Link> / {event.subject_code}
+        <Link href="/events">事件库</Link> / {event.subject_code}
       </p>
       <header className="detail-head">
         <div>

@@ -10,6 +10,7 @@ export function ResearchForm({ start, end }: { start: string; end: string }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
+  const [dates, setDates] = useState({ start, end });
   return (
     <form
       ref={form}
@@ -90,23 +91,34 @@ export function ResearchForm({ start, end }: { start: string; end: string }) {
             {fields.code}
           </span>
         </div>
+        <div className="date-shortcuts" role="group" aria-label="快捷披露日期区间">
+          {[30, 90, 180].map((days) => <button type="button" className="ghost" key={days} onClick={() => {
+            setDates({ start: new Date(Date.parse(end) - (days - 1) * 86400_000).toISOString().slice(0, 10), end });
+            key.current = null;
+            setFields({});
+            setError("");
+          }}>近 {days} 日</button>)}
+        </div>
+        <p id="date-help" className="hint date-help">按披露日期筛选，最多 366 个自然日；时间均为北京时间。</p>
         <div className="research-dates">
           {(
             [
               ["start", "起始披露日期", start],
               ["end", "截止披露日期", end],
             ] as const
-          ).map(([name, label, value]) => (
+          ).map(([name, label]) => (
             <div key={name} className="research-field">
               <label htmlFor={`research-${name}`}>{label}</label>
               <input
                 type="date"
                 id={`research-${name}`}
                 name={name}
-                defaultValue={value}
-                max={end}
+                value={dates[name]}
+                onChange={(e) => setDates((current) => ({ ...current, [name]: e.target.value }))}
+                max={name === "start" ? dates.end || end : end}
+                min={name === "end" ? dates.start || undefined : undefined}
                 aria-invalid={Boolean(fields[name])}
-                aria-describedby={`${name}-error`}
+                aria-describedby={`date-help ${name}-error`}
               />
               <span id={`${name}-error`} className="field-error">
                 {fields[name]}
@@ -115,10 +127,10 @@ export function ResearchForm({ start, end }: { start: string; end: string }) {
           ))}
         </div>
         <p className="hint">
-          北京时间（UTC+8）。后台自动处理，离开页面不会中断任务。
+          后台自动处理，离开页面不会中断任务。可从研究记录继续查看。
         </p>
         <button type="submit" aria-busy={busy} className="research-submit">
-          {busy ? "正在创建…" : "开始分析"}
+          {busy ? "正在创建…" : "开始研究"}
         </button>
       </fieldset>
       <p className="field-error" role={error ? "alert" : undefined}>

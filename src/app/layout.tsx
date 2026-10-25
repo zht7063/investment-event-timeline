@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { MainNav } from "@/components/MainNav";
 import "./globals.css";
 
 export const metadata = {
@@ -17,12 +18,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <span className="brand-mark" aria-hidden="true">§</span>
             证据时间线
           </Link>
-          <nav aria-label="主导航">
-            <Link href="/research">股票研究</Link>
-            <Link href="/">事件</Link>
-            <Link href="/import">导入资料</Link>
-            <Link href="/sources">数据源</Link>
-          </nav>
+          <MainNav />
         </header>
         <main id="main">{children}</main>
         <footer className="colophon">

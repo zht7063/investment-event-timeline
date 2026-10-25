@@ -20,7 +20,7 @@
 
 ## Flow ledger
 
-开始分析 → 按钮保持尺寸并禁用 → 跳转 /research/:id → 显示任务进度。表单本地校验失败保留输入并聚焦首个错误。创建请求重试复用幂等键，避免未知结果时重复任务。
+开始研究 → 按钮保持尺寸并禁用 → 跳转 /research/:id → 显示任务进度。表单本地校验失败保留输入并聚焦首个错误。创建请求重试复用幂等键，避免未知结果时重复任务。
 
 研究任务轮询失败保留上次结果，提示连接中断并提供重试；刷新恢复 URL 中的任务 ID 和页码。取消只停止后续处理，已有资料保留，不删除共享资料。重试只继续未完成部分，已完成分析复用。不存在的任务显示404与返回入口。
 
@@ -35,3 +35,11 @@ zh-CN / Asia/Shanghai。原生日期选择的浏览器弹层为允许平台行�
 ## Migration scope
 
 本轮 premium-ui.json 严格审计新增研究流程。已有导入页的浏览器验证、可缩放 textarea 等历史差异不作为新规范，不在本轮重写。跨页面字体、状态徽章和全局滚动条由现有共享实现承接；新增研究表单使用上述统一行为。
+
+## Research workspace navigation
+
+MainNav owns current-route indication. `/` and `/research` share the research workspace; `/events` holds the separate event library. Existing event detail URLs stay stable. Research records use server pagination (10 per page, `page` in URL), newest-created ordering, clamped page bounds and explicit refresh. They retain the existing shared-instance visibility boundary. Task detail returns to research records.
+
+Persisted job phase supplies the active stage; the page synchronization timestamp appears only after a successful response and is distinct from the persisted task update timestamp. Coverage gaps remain visible outside collapsed source details; when gaps exist, successful source statuses stay in the expandable details. Jump links lead to findings, documents and coverage. Empty document lists omit pagination.
+
+Shared navigation and primary actions have at least44px touch height; navigation exposes aria-current. Date shortcuts use Beijing today, including both endpoints; native date widgets and ResearchInput remain the canonical owners.
