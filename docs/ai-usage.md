@@ -27,3 +27,15 @@
 | 真实模型冒烟 | 用构造的终止公告调用真实模型 | 浏览器导入页实测 | ① `.env` 中 `AI_MODEL` 值前有制表符，接口返回 400；改为读取时 trim。② 模型在正文未写代码时把 `event.subjectCode` 返回 null，导致整份输出被拒；改为允许 null，并在导入页增加“主体标的代码”提示字段作为回退 |
 | 页面 | 列表、详情、导入三页及 API | 浏览器走通：导入 → 真实模型抽取 3 条论断 → 候选按事项标识自动选中 → 关联 2 条 → 结论 已失效→存在冲突 → 撤销 → 已有证据支持，历史共 10 版 | node:sqlite 行对象原型为 null，React 拒绝传给客户端组件，列表和导入页 500；在 repo 中转换为普通对象 |
 | 展示 | 结论摘要模板 | 页面目检 | 已失效行显示了 UTC ISO 原始字符串，改为北京时间格式 |
+
+## 2026-10-25 1:45-2:40（数据源、同步、部署）
+
+| 环节 | AI 做了什么 | 人工/验证 | 修正 |
+| --- | --- | --- | --- |
+| 数据源连接器 | 编写 `fuyao.ts`（MCP a-share 行情快照、REST 新闻）和 `ifind.ts`（MCP 公告/新闻检索） | 类型检查通过，47 项测试全部通过 | 首版 fuyao.ts 的 map 回调参数类型不兼容 `unknown[]`，改为显式类型断言 |
+| 同步模块 | 编写 `sync.ts`：Provider 注册表模式、文件锁、sync_runs 记录、自动分析（每轮最多 5 条） | 类型检查通过，`npm run build` 成功 | 第一版使用 `/tmp` 固定锁路径，重构为数据库路径旁的锁文件；Turbopack 警告动态文件系统访问，添加 turbopackIgnore 注释 |
+| 数据源页面 | 编写 `sources/page.tsx` + `SourcesClient.tsx`：中文标签、过期横幅、待处理文档列表 | `npm run build` 17 路由全部注册 | 第一版使用英文标签和内联样式，重写为共享 `formatTime` 和 CSS 类 |
+| 行情背景 | `MarketBackground.tsx` 在事件详情页展示关联标的行情 | 浏览器目检（构造数据标的不触发行情请求） | — |
+| 部署 | systemd 单元文件、setup.sh、Dockerfile | 直接 `node next start` 验证：health check 200、events API 3 个事件、HTML 页面渲染正确 | `sudo systemctl` 在沙箱中不可用，改为直接 node 进程启动 |
+| 同步脚本 | `scripts/sync.ts`、`npm run sync` | 类型检查通过 | — |
+| valid_until 过期 | 确认已在读取路径中线上（`searchEvents` 对所有事件调用 `recompute`，`getEventDetail` 在实时视图也调用）| 种子数据的收购事件正确显示"已失效" | 无需额外修改，handoff 中标记的连线已在前一个 session 完成 |

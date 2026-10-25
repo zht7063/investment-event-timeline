@@ -1,6 +1,123 @@
 # 投资事件情报与证据时间线
 
-当前阶段：事件列表、事件详情（结论、时间线、冲突、历史、截至某时回看）、导入（模型抽取、引用校验、归并、撤销）已可用；数据源页、同步脚本、部署尚未完成。
+围绕一个投资事件，查清最初来源、事实变化、证据冲突、当前结论及关联标的。
 
-- [题目要求](docs/title-投资事件情报与证据时间线.md)
-- [项目结构与实施计划](docs/implementation-plan.md)
+## 快速启动
+
+```bash
+# 环境要求：Node 24+
+cp .local.env .env   # 编辑 .env 填写必要变量
+npm install
+npm run build
+npm start            # http://localhost:3000
+```
+
+首次启动自动加载构造演示数据（虚拟公司事件链）。重置演示数据：
+
+```bash
+curl -X POST http://localhost:3000/api/demo/reset -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+## 环境变量
+
+| 变量 | 必填 | 说明 |
+| --- | --- | --- |
+| `DATABASE_PATH` | 否 | SQLite 文件路径，默认 `./data/app.db` |
+| `ADMIN_TOKEN` | 是 | 管理口令（同步、重置） |
+| `AI_BASE_URL` | 是 | OpenAI 兼容接口 `/v1` |
+| `AI_MODEL` | 是 | 模型名称，需支持 JSON 结构化输出 |
+| `AI_API_KEY` | 是 | 模型 API Key |
+| `FUYAO_API_KEY` | 否 | 扶摇 API Key（行情背景、新闻同步） |
+| `FUYAO_BASE_URL` | 否 | 扶摇 REST 主机 |
+| `FUYAO_MCP_A_SHARE_URL` | 否 | 扶摇 A 股 MCP 端点 |
+| `IFIND_TOKEN` | 否 | iFinD MCP 密钥 |
+| `IFIND_MCP_URL` | 否 | iFinD 资讯 MCP 端点 |
+
+模板见 `.local.env`。
+
+## 产品能力
+
+- **事件跟踪**：识别、合并、跟踪同一事件的不同来源与版本
+- **论断分类**：事实、观点、推测、传闻，各有来源等级和权重
+- **四类时间**：发生、披露、抓取、来源更新分别存储和展示
+- **证据冲突**：支持与反驳同时保留，不单凭等级抹掉反证
+- **结论变化**：更新、否认、更正、过期均改变结论，有版本历史
+- **截至某时**：回看过去任一时点的结论，后补资料不泄漏到早期
+- **关联标的**：本地关注清单，行情背景（不作证据）
+- **数据同步**：iFinD 公告/新闻、扶摇个股新闻，定时同步和手动触发
+- **导入**：人工粘贴文本，模型抽取论断并校验原文引用
+
+## 技术栈
+
+- TypeScript + Next.js 16 App Router（页面与 API 同一项目）
+- SQLite（Node 内置 `node:sqlite`），手写 `schema.sql`
+- Zod 4 校验 API 输入和模型输出
+- Vitest 5 测试；普通 CSS，无组件库
+
+## 项目结构
+
+```
+src/
+  app/             # 页面和 API 路由
+  components/      # 共享组件
+  domain/          # 领域规则（纯函数）
+  server/          # 数据库、入库、AI、HTTP、数据源连接器
+scripts/sync.ts    # 同步脚本（cron）
+data/seed/         # 构造演示数据
+deploy/            # systemd 服务和部署脚本
+docs/              # 计划、AI 记录、测试说明
+```
+
+## AI 的角色
+
+模型只做论断抽取、分类建议、归并候选与理由。引用校验、关联提交和状态计算由应用规则完成。模型失败时资料保留为"待分析"，可重试或人工录入。资料原文只作数据传入，不改变系统指令。
+
+详见 `docs/ai-usage.md`。
+
+## 数据来源
+
+| 来源 | 接入方式 | 备注 |
+| --- | --- | --- |
+| 构造演示数据 | 种子加载 | 虚拟公司，显式标注 |
+| iFinD 公告/新闻 | MCP search_notice/search_news | 片段，无全文，日精度 |
+| 扶摇个股新闻 | REST API | MCP news 端点 405，改用 REST |
+| 扶摇行情 | MCP get_a_share_prices_snapshot | 仅背景，不作证据 |
+| 人工导入 | 粘贴文本 | 不抓取 URL |
+
+## 部署
+
+### 直接运行（推荐）
+
+```bash
+npm run build
+# systemd 或直接运行
+sudo cp deploy/evt-timeline.service /etc/systemd/system/
+sudo systemctl enable --now evt-timeline
+
+# 定时同步（每 30 分钟）
+crontab -e
+# */30 * * * * cd /path/to/project && npx tsx scripts/sync.ts >> /tmp/evt-sync.log 2>&1
+```
+
+### Docker
+
+```bash
+docker build -t evt-timeline .
+docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-timeline
+```
+
+## 已知边界
+
+- 单实例部署，无访客隔离和请求限流
+- 公开实例允许访客导入，被污染时由管理员一键重置
+- 不做全市场资讯平台、用户系统、持仓管理、交易或投资建议
+- 不预测涨跌，不给出买卖建议
+- 来源等级只用于排序和规则，不换算成真实性概率
+- 无 Playwright e2e 测试（计划内但未在 3 小时窗口完成）
+
+## 文档
+
+- [实施计划](docs/implementation-plan.md)
+- [AI 使用与验证记录](docs/ai-usage.md)
+- [测试说明](docs/testing.md)
+- [数据探测结果](docs/data-probe.md)
