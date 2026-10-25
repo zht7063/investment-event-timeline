@@ -185,6 +185,16 @@ blockquote { margin: 0.4rem 0; padding: 0.4rem 0.8rem; border-left: 3px solid va
 .error { color: var(--s-denied); font: 0.88rem var(--sans); background: #fbeaea; border-left: 4px solid var(--s-denied); padding: 0.5rem 0.8rem; }
 .warn-box { padding: 0.8rem 1rem; border: 1px solid var(--s-unverified); background: #fbf4df; font-family: var(--sans); }
 .loading { font-family: var(--sans); animation: pulse 1.4s ease-in-out infinite; }
+.stale-banner { padding: 0.6rem 1rem; border: 1px solid var(--s-unverified); background: #fbf4df; font: 0.85rem var(--sans); color: var(--s-unverified); margin: 0 0 1rem; }
+.stale-banner strong { color: var(--ink); }
+.price-chips { list-style: none; padding: 0; display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 0.6rem 0 0; }
+.price-chips li { padding: 0.5rem 0.8rem; border: 1px solid var(--line); background: var(--card); font: 0.85rem var(--mono); }
+.price-up { color: var(--s-supported); margin-left: 0.4rem; }
+.price-down { color: var(--s-denied); margin-left: 0.4rem; }
+.source-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+.runs { list-style: none; padding: 0; margin: 0.4rem 0 0; font: 0.85rem var(--sans); }
+.runs li { padding: 0.25rem 0; border-bottom: 1px dotted var(--line); display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.admin-token { max-width: 360px; margin-bottom: 1rem; }
 
 .import .steps { list-style: none; padding: 0; display: flex; gap: 0.4rem; font: 0.85rem var(--sans); flex-wrap: wrap; }
 .import .steps li { padding: 0.3rem 0.8rem; border: 1px solid var(--line); color: var(--muted); }

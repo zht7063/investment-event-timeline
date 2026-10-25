@@ -1,154 +1,116 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { formatTime } from "@/domain/time";
+import { TIER_LABEL } from "@/domain/types";
 
-type Source = {
+export type SourceRow = {
   id: string; name: string; kind: string; tier: number;
   access_mode: string; last_success_at: string | null; last_error: string | null;
 };
-type SyncRun = {
-  source_id: string; started_at: string; finished_at: string | null;
+export type SyncRunRow = {
+  id: string; source_id: string; started_at: string; finished_at: string | null;
   status: string; added: number; duplicates: number; error: string | null;
 };
 
 const ACCESS_LABEL: Record<string, string> = {
-  constructed: "constructed demo data",
-  live: "live API",
-  manual: "manual import",
-  unavailable: "unavailable",
+  constructed: "构造演示数据",
+  live: "真实接口",
+  manual: "人工导入",
+  unavailable: "未接入",
 };
+const RUN_LABEL: Record<string, string> = { ok: "成功", failed: "失败", running: "进行中" };
+const RUN_BADGE: Record<string, string> = { ok: "supported", failed: "denied", running: "unverified" };
 
-const KIND_LABEL: Record<string, string> = {
-  regulator: "regulator/exchange",
-  issuer: "issuer/company",
-  media: "media",
-  research: "research/commentary",
-  rumor: "anonymous/rumor",
-  market_data: "market data",
-  manual: "manual entry",
-};
+/** Sync results older than this are flagged as stale on the page. */
+const STALE_MS = 24 * 3600_000;
 
-function formatTime(iso: string | null): string {
-  if (!iso) return "unknown";
-  try {
-    return new Date(iso).toLocaleString("zh-CN", { timeZone: "Asia/Shanghai", hour12: false });
-  } catch {
-    return iso;
-  }
-}
-
-export function SourcesClient({ sources, syncRuns }: { sources: Source[]; syncRuns: SyncRun[] }) {
+export function SourcesClient({ sources, runs, now }: { sources: SourceRow[]; runs: SyncRunRow[]; now: string }) {
+  const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
-  const [result, setResult] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [token, setToken] = useState("");
+  const hasLive = sources.some((s) => s.access_mode === "live");
 
-  const syncable = sources.filter((s) => s.access_mode === "live");
-  const runsBySource = new Map<string, SyncRun[]>();
-  for (const r of syncRuns) {
-    const list = runsBySource.get(r.source_id) ?? [];
-    list.push(r);
-    runsBySource.set(r.source_id, list);
-  }
-
-  async function triggerSync(sourceId: string) {
-    if (!token.trim()) {
-      setResult("Please enter the ADMIN_TOKEN first.");
-      return;
-    }
-    setBusy(sourceId);
-    setResult(null);
+  async function sync(id: string) {
+    if (!token.trim()) return setMsg({ ok: false, text: "请先填写管理口令（ADMIN_TOKEN）。" });
+    setBusy(id);
+    setMsg(null);
     try {
-      const res = await fetch(`/api/sources/${encodeURIComponent(sourceId)}/sync`, {
-        method: "POST",
-        headers: { authorization: `Bearer ${token.trim()}` },
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setResult(`Sync failed: ${data.error?.message ?? res.statusText}`);
-      } else {
-        setResult(`Sync complete: +${data.added} new, ${data.duplicates} duplicates${data.errors?.length ? `, ${data.errors.length} errors` : ""}`);
-      }
+      const res = await fetch(`/api/sources/${encodeURIComponent(id)}/sync`, { method: "POST", headers: { authorization: `Bearer ${token.trim()}` } });
+      const d = await res.json().catch(() => null);
+      if (!res.ok) setMsg({ ok: false, text: `同步失败：${d?.error?.message ?? res.status}（${d?.error?.code ?? `HTTP_${res.status}`}）` });
+      else if (d.status === "busy") setMsg({ ok: false, text: "已有同步在进行，本次未执行。" });
+      else
+        setMsg({
+          ok: d.errors.length === 0,
+          text: `同步完成：新增 ${d.added}，重复 ${d.duplicates}，已分析 ${d.analyzed}${d.errors.length ? `；${d.errors.length} 个错误，旧数据保留` : ""}`,
+        });
+      router.refresh();
     } catch {
-      setResult("Network error");
+      setMsg({ ok: false, text: "网络错误，请检查连接后重试。" });
     } finally {
       setBusy(null);
     }
   }
 
+  if (!sources.length) return <p className="empty">尚无数据源。导入第一条资料后会自动创建来源。</p>;
+
   return (
     <>
-      {syncable.length > 0 && (
-        <div className="panel" style={{ marginBottom: "1rem" }}>
-          <label>
-            <span>Admin Token (for manual sync)</span>
-            <input
-              type="password"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              placeholder="ADMIN_TOKEN"
-              autoComplete="off"
-              style={{ maxWidth: "360px" }}
-            />
-          </label>
-        </div>
+      {hasLive && (
+        <label className="admin-token">
+          <span>管理口令（手动同步需要）</span>
+          <input type="password" value={token} onChange={(e) => setToken(e.target.value)} autoComplete="off" />
+        </label>
       )}
-
-      {result && <p className={result.includes("failed") || result.includes("error") ? "error" : "meta"} role="status">{result}</p>}
-
+      {msg && (
+        <p className={msg.ok ? "meta" : "error"} role={msg.ok ? "status" : "alert"}>
+          {msg.text}
+        </p>
+      )}
       <ul className="instruments">
-        {sources.map((s) => (
-          <li key={s.id}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "0.5rem" }}>
-              <div>
-                <strong>{s.name}</strong>
-                <span className="tag">{ACCESS_LABEL[s.access_mode] ?? s.access_mode}</span>
+        {sources.map((s) => {
+          const mine = runs.filter((r) => r.source_id === s.id);
+          const stale = s.access_mode === "live" && (!s.last_success_at || Date.parse(now) - Date.parse(s.last_success_at) > STALE_MS);
+          return (
+            <li key={s.id}>
+              <div className="source-head">
+                <span>
+                  <strong>{s.name}</strong>
+                  <span className={`tag${s.access_mode === "unavailable" ? " tag-warn" : ""}`}>{ACCESS_LABEL[s.access_mode] ?? s.access_mode}</span>
+                </span>
+                {s.access_mode === "live" && (
+                  <button type="button" className="ghost" disabled={busy !== null} onClick={() => sync(s.id)}>
+                    {busy === s.id ? "同步中…" : "立即同步"}
+                  </button>
+                )}
               </div>
-              {s.access_mode === "live" && (
-                <button
-                  type="button"
-                  className="ghost"
-                  disabled={busy === s.id}
-                  onClick={() => triggerSync(s.id)}
-                >
-                  {busy === s.id ? "Syncing..." : "Sync now"}
-                </button>
+              <p className="meta">
+                {TIER_LABEL[s.tier] ?? `等级 ${s.tier}`} · 最近成功同步：{formatTime(s.last_success_at)}
+              </p>
+              {stale && <p className="stale-banner">数据可能已过期：超过 24 小时没有成功同步。事件结论保留旧值，不代表事件已失效。</p>}
+              {s.last_error && <p className="error">最近错误：{s.last_error}</p>}
+              {mine.length > 0 && (
+                <details>
+                  <summary className="meta">同步记录（最近 {Math.min(mine.length, 10)} 次）</summary>
+                  <ol className="runs">
+                    {mine.slice(0, 10).map((r) => (
+                      <li key={r.id}>
+                        <span className={`badge badge-${RUN_BADGE[r.status] ?? "none"}`}>{RUN_LABEL[r.status] ?? r.status}</span>
+                        <time dateTime={r.started_at}>{formatTime(r.started_at)}</time>
+                        <span>新增 {r.added} · 重复 {r.duplicates}</span>
+                        {r.error && <span className="muted">{r.error}</span>}
+                      </li>
+                    ))}
+                  </ol>
+                </details>
               )}
-            </div>
-            <p className="meta">
-              Type: {KIND_LABEL[s.kind] ?? s.kind} &middot; Tier {s.tier}
-              {s.last_success_at && <> &middot; Last sync: {formatTime(s.last_success_at)}</>}
-            </p>
-            {s.last_error && <p className="error" style={{ marginTop: "0.3rem" }}>{s.last_error}</p>}
-
-            {(runsBySource.get(s.id) ?? []).length > 0 && (
-              <details style={{ marginTop: "0.4rem" }}>
-                <summary className="meta" style={{ cursor: "pointer" }}>
-                  Sync history ({runsBySource.get(s.id)!.length} runs)
-                </summary>
-                <ol style={{ listStyle: "none", padding: 0, margin: "0.4rem 0 0", fontSize: "0.85rem", fontFamily: "var(--sans)" }}>
-                  {runsBySource.get(s.id)!.slice(0, 10).map((r, i) => (
-                    <li key={i} style={{ padding: "0.2rem 0", borderBottom: "1px dotted var(--line)" }}>
-                      <span className={`badge badge-${r.status === "ok" ? "supported" : r.status === "failed" ? "denied" : "unverified"}`}>
-                        {r.status}
-                      </span>
-                      {" "}{formatTime(r.started_at)}
-                      {r.finished_at && <> &rarr; {formatTime(r.finished_at)}</>}
-                      {" &middot; "}+{r.added} / {r.duplicates} dup
-                      {r.error && <span style={{ color: "var(--s-denied)" }}> &middot; {r.error}</span>}
-                    </li>
-                  ))}
-                </ol>
-              </details>
-            )}
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
-
-      {sources.length === 0 && (
-        <div className="empty">
-          No data sources configured yet. Import your first document or set up iFinD/Fuyao API keys.
-        </div>
-      )}
     </>
   );
 }

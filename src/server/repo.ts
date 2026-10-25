@@ -289,3 +289,28 @@ export function listEventOptions(db = getDb()) {
 
 /** node:sqlite rows have a null prototype, which React refuses to pass to Client Components. */
 const plain = (rows: unknown[]) => rows.map((r) => ({ ...(r as object) }));
+
+export function listSyncRuns(db = getDb()) {
+  return plain(
+    db.prepare("select id, source_id, started_at, finished_at, status, added, duplicates, error from sync_runs order by started_at desc limit 100").all(),
+  ) as {
+    id: string; source_id: string; started_at: string; finished_at: string | null;
+    status: string; added: number; duplicates: number; error: string | null;
+  }[];
+}
+
+/** Documents from providers that have not yet been linked to an event. */
+export function listPendingDocuments(db = getDb()) {
+  return plain(
+    db.prepare(
+      `select d.id, d.title, s.name as source_name, v.analysis_status, v.published_at, v.fetched_at
+       from documents d join sources s on s.id = d.source_id
+       join document_versions v on v.document_id = d.id
+       where v.id = (select v2.id from document_versions v2 where v2.document_id = d.id order by v2.fetched_at desc, v2.rowid desc limit 1)
+         and not exists (select 1 from claims c join event_evidence ee on ee.claim_id = c.id where c.version_id = v.id and ee.revoked_at is null)
+       order by v.fetched_at desc limit 50`,
+    ).all(),
+  ) as {
+    id: string; title: string; source_name: string; analysis_status: string; published_at: string | null; fetched_at: string;
+  }[];
+}
