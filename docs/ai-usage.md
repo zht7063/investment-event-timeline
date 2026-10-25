@@ -5,7 +5,7 @@
 ## 工具
 
 - Codex 桌面版（编码代理）：生成脚手架、领域规则、种子数据、测试，执行探测与命令。
-- 产品内模型：`AI_MODEL` 指向的 OpenAI 兼容接口，仅用于论断抽取与归并候选理由（尚未接入代码）。
+- 产品内模型：`AI_MODEL` 指向的 OpenAI 兼容接口，用于论断抽取与归并候选理由，已接入 `src/server/ai.ts`。
 
 ## 2026-10-25 第一小时
 
@@ -51,3 +51,16 @@
 | 同步测试 | 新增 `tests/integration/sync.test.ts`：14 个测试覆盖 registerProviders、syncCodes、configuredProviderIds、syncSource（未配置、无标的、去重、上游失败保留旧数据、未知源）、acquireLock、lockedSync busy | 61/61 全部通过 | 首版"上游失败"测试预期 status 为 ok，实际为 failed（所有代码失败且 added=0 时逻辑正确返回 failed），修正测试预期 |
 | 单位口径测试 | 新增 `tests/integration/ingest.test.ts` "unit and basis" 用例：验证同事件不同口径（元 vs %）不产生冲突、不同事件的同单位论断隔离、模型输出万元/不含税原样存储不归一化 | 62/62 全部通过 | — |
 | Playwright 冒烟 | 新增 `playwright.config.ts` 和 `tests/e2e/smoke.test.ts`：6 个冒烟用例（health、首页加载、事件详情、数据源页、导入页、状态筛选）；`package.json` 加 `test:e2e` 脚本 | 本机运行 6/6 通过，用了 4 轮才稳定 | ① 浏览器二进制经 mihomo 代理下载在 90% 处反复 SSL 报错，改用 curl 下载 zip 手动解压；还需单独下载 headless shell。② 定位器用逗号拼接 `text=` 无效，改为 `getByText(正则)`。③ 首页冷启动渲染需十几秒到一分钟，改用 `domcontentloaded` 并放宽超时。④ 筛选用例原先点击提交按钮超时，且页面有两个 submit 按钮，最终改为直接带查询参数访问，因此没有覆盖表单点击 |
+
+## 2026-10-25 真实 API 验证与修正
+
+详细验证结果见 `docs/api-test-report-2026-10-25.md`。以下记录 AI 猜错的结构和随后的修正。
+
+| 环节 | AI 猜测 | 实际 | 修正 |
+| --- | --- | --- | --- |
+| 扶摇行情响应 | 行情行在顶层数组或 `data` | 行情行在 `data.item`，时间戳在 `data.timestamp` | 读取 `data.item`，回退外层时间戳 |
+| 扶摇新闻参数 | 不需要 `offset` | 缺少 `offset` 返回业务码 1001；`offset=0` 或同时传 `limit` 返回 1002 | 使用 `offset=first`，本地截取 |
+| 扶摇新闻字段 | `content`、`date`、`url` | `summary`、`publish_time_ms`（毫秒）、`jump_url`，列表在 `data.items` | 映射实际字段名 |
+| iFinD 新闻 | 单层 JSON | `data.data` 是 JSON 字符串，内含中文键数组 | 递归解包 |
+| 扶摇业务错误 | `getPriceSnapshot` 不检查业务码，`catch` 返回空数组 | HTTP 200 + 非零业务码被当成功，掩盖参数错误 | 非零码抛错（与 `getNewsTimeline` 一致） |
+| Playwright 浏览器 | 通过 npm 下载 | mihomo 代理下 90% 处 SSL 报错，需 curl 手动下载 zip 并解压 | 手动安装 chromium + headless shell |

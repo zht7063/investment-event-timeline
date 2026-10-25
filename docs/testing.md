@@ -19,7 +19,7 @@ npm run build
 npm run test:e2e
 ```
 
-## Test Results (2026-10-25)
+## Test Results (2026-10-25, updated)
 
 | Category | File | Tests | Status |
 | --- | --- | --- | --- |
@@ -30,10 +30,12 @@ npm run test:e2e
 | Unit | tests/unit/http.test.ts | retry policy (429, 5xx, timeout, 400/401/403) | Pass |
 | Integration | tests/integration/seed.test.ts | seed data loads, conclusion history replays correctly | Pass |
 | Integration | tests/integration/ingest.test.ts | import, dedup, analyze, associate, revoke, recompute, unit/basis isolation | Pass |
-| Build | `npm run build` | 17 routes registered, 0 errors | Pass |
+| Unit | tests/unit/connectors.test.ts | Fuyao snapshot parsing, business error, iFinD news unwrap, news field mapping | Pass |
+| Build | `npm run build` | 17 routes registered, 0 errors | Pass (含 TypeScript 校验；Codex 沙箱内会因 `--showConfig` 无法解析而失败，需提权运行) |
 | Typecheck | `npm run typecheck` | 0 errors | Pass |
+| Playwright | tests/e2e/smoke.test.ts | health, 首页, 事件详情, 数据源, 导入, 状态筛选 | Pass (6/6) |
 
-Total: 8 test files, 62 tests, all passing.
+Total: 9 test files, 68 tests, all passing. Playwright 6/6 通过。
 
 ## What Tests Cover
 
@@ -70,7 +72,20 @@ Total: 8 test files, 62 tests, all passing.
 7. Production build: all 17 routes, no errors
 
 > Below items were verified manually during development sessions. They have not been re-verified since the last code changes and are not automated.
-- Data source connectors (`src/server/sources/fuyao.ts`, `ifind.ts`) have no isolated unit tests (sync module covered by integration tests)
+- ~~Data source connectors have no unit tests~~ -- covered by `tests/unit/connectors.test.ts` (added 2026-10-25): snapshot parsing, business error check, iFinD news unwrap, news field mapping
 - `/api/prices` endpoint has no automated tests
-- Sync script has never been executed against real Fuyao/iFinD APIs
+- Sync script was executed against real Fuyao/iFinD APIs for `300308.SZ` on the user's local machine (2026-10-25)。详见 `docs/api-test-report-2026-10-25.md`。本服务器未复现
 | Integration | tests/integration/sync.test.ts | provider registration, sync codes, dedup, upstream failure, lock | Pass |
+
+## 已知测试缺口
+
+真实 API 验证仅覆盖 `300308.SZ` 一个标的，以下场景未测试：
+
+- 多标的同步
+- 分页与历史回填
+- 限流（HTTP 429）
+- 认证失败（HTTP 401/403）
+- 长时间运行稳定性
+- UI 端到端（导入→关联→撤销完整链路）
+- 生产构建部署后的回归验证
+

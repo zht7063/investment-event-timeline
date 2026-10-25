@@ -32,6 +32,7 @@ curl -X POST http://localhost:3000/api/demo/reset -H "Authorization: Bearer <ADM
 | `FUYAO_MCP_A_SHARE_URL` | 否 | 扶摇 A 股 MCP 端点 |
 | `IFIND_TOKEN` | 否 | iFinD MCP 密钥 |
 | `IFIND_MCP_URL` | 否 | iFinD 资讯 MCP 端点 |
+| `SYNC_CODES` | 否 | 同步标的代码（逗号分隔，如 `300308.SZ,600519.SH`）；种子数据 DEMO-* 不会被同步 |
 
 模板见 `.local.env`。
 
@@ -79,9 +80,9 @@ docs/              # 计划、AI 记录、测试说明
 | 来源 | 接入方式 | 备注 |
 | --- | --- | --- |
 | 构造演示数据 | 种子加载 | 虚拟公司，显式标注 |
-| iFinD 公告/新闻 | MCP search_notice/search_news | 片段，无全文，日精度 |
-| 扶摇个股新闻 | REST API | MCP news 端点 405，改用 REST |
-| 扶摇行情 | MCP get_a_share_prices_snapshot | 仅背景，不作证据 |
+| iFinD 公告/新闻 | MCP search_notice/search_news | 片段，无全文，日精度。已对 `300308.SZ` [真实验证](docs/api-test-report-2026-10-25.md)（用户本机） |
+| 扶摇个股新闻 | REST API | MCP news 端点 405，改用 REST。已对 `300308.SZ` [真实验证](docs/api-test-report-2026-10-25.md)（用户本机） |
+| 扶摇行情 | MCP get_a_share_prices_snapshot | 仅背景，不作证据。已对 `300308.SZ` [真实验证](docs/api-test-report-2026-10-25.md)（用户本机） |
 | 人工导入 | 粘贴文本 | 不抓取 URL |
 
 ## 部署
@@ -121,6 +122,7 @@ docker run -d --name evt -p 3000:3000 -v evt-data:/app/data --env-file .env evt-
 - [AI 使用与验证记录](docs/ai-usage.md)
 - [测试说明](docs/testing.md)
 - [数据探测结果](docs/data-probe.md)
-| `SYNC_CODES` | 否 | 同步标的代码（逗号分隔，如 `300308.SZ,600519.SH`）；种子数据 DEMO-* 不会被同步 |
 
 > 以下 systemd 和 cron 配置尚未在目标机器上执行过，首次部署请逐步验证。
+>
+> 真实 API 验证结果来自用户本机（macOS），本服务器尚未执行同步。详见 `docs/api-test-report-2026-10-25.md`。
