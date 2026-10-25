@@ -270,7 +270,7 @@ export function searchEvents(q: { text?: string; status?: Status; codes?: string
 }
 
 export function listSources(db = getDb()) {
-  return db.prepare("select id, name, kind, tier, access_mode, last_success_at, last_error from sources order by tier, name").all() as {
+  return plain(db.prepare("select id, name, kind, tier, access_mode, last_success_at, last_error from sources order by tier, name").all()) as {
     id: string; name: string; kind: string; tier: number; access_mode: string; last_success_at: string | null; last_error: string | null;
   }[];
 }
