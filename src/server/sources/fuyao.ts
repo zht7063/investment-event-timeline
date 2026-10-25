@@ -93,14 +93,14 @@ export async function getPriceSnapshot(thscodes: string[]): Promise<PriceSnapsho
   if (!text) return [];
   try {
     const data = JSON.parse(text);
-    const rows = Array.isArray(data) ? data : data.data ? (Array.isArray(data.data) ? data.data : [data.data]) : [data];
+    const rows = Array.isArray(data.data?.item) ? data.data.item : Array.isArray(data) ? data : data.data ? (Array.isArray(data.data) ? data.data : [data.data]) : [data];
     return rows.map((r: Record<string, unknown>) => ({
       code: String(r.thscode ?? r.code ?? ""),
       name: String(r.name ?? r.stock_name ?? ""),
       lastPrice: typeof r.last_price === "number" ? r.last_price : null,
       changeRatioPct: typeof r.price_change_ratio_pct === "number" ? r.price_change_ratio_pct : null,
       turnover: typeof r.turnover === "number" ? r.turnover : null,
-      timestamp: r.timestamp ? new Date(Number(r.timestamp)).toISOString() : null,
+      timestamp: (r.timestamp ?? data.data?.timestamp) ? new Date(Number(r.timestamp ?? data.data?.timestamp)).toISOString() : null,
     }));
   } catch {
     return [];
@@ -118,16 +118,17 @@ export type FuyaoNewsItem = {
 export async function getNewsTimeline(thscode: string, limit = 20): Promise<FuyaoNewsItem[]> {
   const { key, base } = env();
   if (!key || !base) throw new Error("FUYAO_API_KEY or FUYAO_BASE_URL not configured");
-  const url = `${base.replace(/\/+$/, "")}/api/news/stock/timeline-list?thscode=${encodeURIComponent(thscode)}&limit=${limit}`;
+  const url = `${base.replace(/\/+$/, "")}/api/news/stock/timeline-list?thscode=${encodeURIComponent(thscode)}&offset=first`;
   try {
     const { res } = await fetchWithPolicy(url, { method: "GET", headers: { "x-api-key": key } });
-    const json = await res.json() as { data?: unknown[] };
-    const items = Array.isArray(json.data) ? json.data : [];
-    return items.map((item) => { const r = item as Record<string, unknown>; return {
+    const json = await res.json() as { code?: number; message?: string; data?: unknown[] | { items?: unknown[] } };
+    if (json.code !== undefined && json.code !== 0) throw new Error(`Fuyao news ${json.code}: ${json.message ?? "upstream error"}`);
+    const items = Array.isArray(json.data) ? json.data : json.data?.items ?? [];
+    return items.slice(0, limit).map((item) => { const r = item as Record<string, unknown>; return {
       title: String(r.title ?? r.news_title ?? ""),
-      content: String(r.content ?? r.news_content ?? ""),
-      date: String(r.date ?? r.published_at ?? ""),
-      url: typeof r.url === "string" ? r.url : null,
+      content: String(r.content ?? r.news_content ?? r.summary ?? ""),
+      date: r.publish_time_ms ? new Date(Number(r.publish_time_ms)).toISOString() : String(r.date ?? r.published_at ?? ""),
+      url: typeof r.jump_url === "string" ? r.jump_url : typeof r.url === "string" ? r.url : null,
     }; });
   } catch (e) {
     if (e instanceof HttpError) throw e;

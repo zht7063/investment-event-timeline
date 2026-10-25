@@ -91,18 +91,16 @@ function toYMD(d: Date): string {
 function parseContent(raw: unknown): Record<string, unknown>[] {
   if (typeof raw === "string") {
     try {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-      if (parsed.data) {
-        const inner = typeof parsed.data === "string" ? JSON.parse(parsed.data) : parsed.data;
-        return Array.isArray(inner) ? inner : [inner];
-      }
-      return [parsed];
+      return parseContent(JSON.parse(raw));
     } catch {
       return [];
     }
   }
   if (Array.isArray(raw)) return raw;
+  if (raw && typeof raw === "object") {
+    if ("data" in raw) return parseContent(raw.data);
+    return [raw as Record<string, unknown>];
+  }
   return [];
 }
 

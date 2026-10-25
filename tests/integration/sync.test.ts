@@ -172,7 +172,7 @@ describe("syncSource", () => {
       expect(doc!.title).toBe("Earlier Notice");
 
       // sync_runs records the failure
-      const runs = db.prepare("select status, error from sync_runs where source_id = 'ifind-notice' order by started_at desc").all() as { status: string; error: string | null }[];
+      const runs = db.prepare("select status, error from sync_runs where source_id = 'ifind-notice' order by started_at desc, rowid desc").all() as { status: string; error: string | null }[];
       // All codes failed with 0 added => status is "failed"
       expect(runs[0].status).toBe("failed");
       expect(runs[0].error).toMatch(/timeout/);
