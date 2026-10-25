@@ -152,3 +152,46 @@ docker compose logs --tail=100 research
 默认每来源扶摇100页、iFinD64个日窗口。达到上限显示“覆盖受限”；“重试未完成部分”只处理失败任务，“继续检索更多资料”为仍有断点的来源增加100次检索额度。参数见 `RESEARCH_MAX_NEWS_PAGES`、`RESEARCH_MAX_SEARCH_WINDOWS`。
 
 本轮没有启用生产访问控制、自动订阅或报告历史比较；这些属于方案 D/E 阶段。研究资料独立于演示数据，演示重置不会删除研究资料。
+
+## 研究资料与统一事件库回填
+
+新版在成功分析的同一事务中更新自动事项索引。既有研究用以下命令回填；不重新抓取、不调用模型、不修改原区间报告或人工证据。已取消、失败和未完成研究同样保留。
+
+```bash
+# 先在数据库备份副本演练；DATABASE_PATH 指向副本，绝不能替换在线库。
+DATABASE_PATH=/tmp/rehearsal.db npm run library:backfill -- --dry-run
+DATABASE_PATH=/tmp/rehearsal.db npm run library:backfill
+# 再执行一次应得到相同数量；失败项输出 jobId，退出码非零。
+DATABASE_PATH=/tmp/rehearsal.db npm run library:backfill
+```
+
+实际升级先备份数据库、镜像及源文件，在新镜像就绪后暂停 web/sync/research，保留共享数据卷，执行：
+
+```bash
+docker compose stop web sync research
+docker compose run --rm --no-deps web npm run library:backfill -- --dry-run
+docker compose run --rm --no-deps web npm run library:backfill
+docker compose up -d --no-build
+```
+
+Compose 的 sync/research 没有健康检查，不使用全服务 `--wait` 作为成功判断；检查 web healthy、worker 日志与容器运行状态，再验收 `/api/health`、`/events?q=002230.SZ` 和 `/events?tab=materials&q=002230.SZ`。
+
+新接口 `/api/library/events` 与 `/api/library/materials` 支持 `q`、`origin=all|automatic|manual`、`codes`、`watched=1`、`limit`、`offset`；事件支持原结论 `status` 筛选。分页前过滤，超出范围的页码回到末页。`/api/library/events/{id}?job={研究ID}` 查询自动事项在指定研究中的证据；省略 job 默认最近更新记录。原 `/api/events` 仍供旧人工事件流程使用。
+
+## Docker Hub 镜像
+
+仓库：`zht7063/investment-event-timeline`。`latest` 指向最近发布版本，`git-<短提交号>` 用于固定部署版本。当前发布平台为 Linux amd64。
+
+现有 Compose 部署可拉取镜像后映射到本地运行标签，无需在测试机编译：
+
+```bash
+cd /opt/evt-timeline
+docker compose exec -T web npm run backup
+docker pull zht7063/investment-event-timeline:latest
+docker image tag evt-timeline:local evt-timeline:previous
+docker image tag zht7063/investment-event-timeline:latest evt-timeline:local
+docker compose up -d --no-build
+curl --fail http://127.0.0.1:3000/api/health
+```
+
+首次从旧版升级到统一事件库时，仍需按上文暂停服务执行一次历史回填。运行凭证由服务器 `.env` 提供，数据库保存在现有数据卷；镜像不包含运行凭证或真实研究数据库。
