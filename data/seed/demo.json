@@ -1,0 +1,120 @@
+{
+  "_note": "构造演示数据：公司、代码、金额、人物均为虚构，仅用于演示证据规则，不对应任何真实证券。",
+  "sources": [
+    { "id": "src-guba", "name": "某股吧匿名帖（构造）", "kind": "rumor", "tier": 5 },
+    { "id": "src-media-a", "name": "示例财经网（构造）", "kind": "media", "tier": 3 },
+    { "id": "src-media-b", "name": "示例证券报（构造）", "kind": "media", "tier": 3 },
+    { "id": "src-issuer-a", "name": "示例光电公告（构造）", "kind": "issuer", "tier": 2 },
+    { "id": "src-issuer-m", "name": "示例材料公告（构造）", "kind": "issuer", "tier": 2 },
+    { "id": "src-broker", "name": "示例证券研究所（构造）", "kind": "research", "tier": 4 }
+  ],
+  "documents": [
+    {
+      "id": "doc-rumor", "source": "src-guba", "key": "demo:guba:1001", "title": "示例光电要收购星河半导体？",
+      "published": "2026-03-02T09:10:00+08:00", "fetched": "2026-03-02T09:30:00+08:00",
+      "body": "听朋友说，示例光电将以约30亿元收购星河半导体100%股权，下周就停牌。",
+      "claims": [
+        { "id": "c-rumor", "quote": "示例光电将以约30亿元收购星河半导体100%股权", "category": "rumor", "content": "示例光电将以约30亿元收购星河半导体100%股权", "unit": "元", "basis": "交易对价" }
+      ]
+    },
+    {
+      "id": "doc-news-1", "source": "src-media-a", "key": "https://media-a.example/news/0303", "url": "https://media-a.example/news/0303", "repostedFrom": "doc-rumor",
+      "title": "市场传闻示例光电拟收购星河半导体", "published": "2026-03-03T08:00:00+08:00", "fetched": "2026-03-03T08:20:00+08:00",
+      "body": "网传示例光电将以约30亿元收购星河半导体100%股权。截至发稿，公司未予置评。有分析人士认为，若交易落地，将补齐公司在芯片环节的短板。",
+      "claims": [
+        { "id": "c-news-rumor", "quote": "网传示例光电将以约30亿元收购星河半导体100%股权", "category": "rumor", "content": "网传约30亿元收购星河半导体100%股权（转述股吧帖）" },
+        { "id": "c-news-opinion", "quote": "若交易落地，将补齐公司在芯片环节的短板", "category": "opinion", "content": "分析人士认为交易可补齐芯片短板" }
+      ]
+    },
+    {
+      "id": "doc-ann-1", "source": "src-issuer-a", "key": "demo:ann:2026-012", "title": "示例光电：关于筹划重大资产购买的提示性公告",
+      "published": "2026-03-05T19:30:00+08:00", "fetched": "2026-03-05T19:45:00+08:00",
+      "body": "公司正在筹划以现金方式收购星河半导体60%股权，交易对价尚未确定。本次交易尚处于筹划阶段，存在不确定性。",
+      "claims": [
+        { "id": "c-ann-60", "quote": "公司正在筹划以现金方式收购星河半导体60%股权", "category": "fact", "content": "公司筹划现金收购星河半导体60%股权", "occurredAt": "2026-03-05", "unit": "%", "basis": "股权比例" },
+        { "id": "c-ann-price", "quote": "交易对价尚未确定", "category": "fact", "content": "交易对价尚未确定" }
+      ]
+    },
+    {
+      "id": "doc-news-2", "source": "src-media-b", "key": "https://media-b.example/a/0308", "url": "https://media-b.example/a/0308",
+      "title": "星河半导体大股东：仅同意出售51%", "published": "2026-03-08T10:00:00+08:00", "fetched": "2026-03-08T10:05:00+08:00",
+      "body": "星河半导体控股股东李某（化名）在接受本报记者采访时表示，目前仅同意出售51%股权，60%的说法与谈判情况不符。",
+      "claims": [
+        { "id": "c-seller-51", "quote": "目前仅同意出售51%股权，60%的说法与谈判情况不符", "category": "fact", "content": "卖方大股东称仅同意出售51%，60%与谈判情况不符", "unit": "%", "basis": "股权比例" }
+      ]
+    },
+    {
+      "id": "doc-ann-2", "source": "src-issuer-a", "key": "demo:ann:2026-015", "title": "示例光电：关于提示性公告的更正公告",
+      "published": "2026-03-12T18:00:00+08:00", "fetched": "2026-03-12T18:10:00+08:00",
+      "body": "经核查，原公告中“收购星河半导体60%股权”应更正为“收购星河半导体51%股权”。公司已与交易对方签署收购意向协议，意向协议有效期至2026年6月30日，期满未签署正式协议的自动终止。",
+      "claims": [
+        { "id": "c-ann-51", "quote": "原公告中“收购星河半导体60%股权”应更正为“收购星河半导体51%股权”", "category": "fact", "content": "收购比例更正为星河半导体51%股权", "unit": "%", "basis": "股权比例" },
+        { "id": "c-ann-loi", "quote": "意向协议有效期至2026年6月30日，期满未签署正式协议的自动终止", "category": "fact", "content": "已签署收购意向协议，有效期至2026-06-30", "validUntil": "2026-06-30T23:59:59+08:00" }
+      ]
+    },
+    {
+      "id": "doc-ann-3", "source": "src-issuer-a", "key": "demo:ann:2026-016", "title": "示例光电：关于媒体报道的澄清公告",
+      "published": "2026-03-15T19:00:00+08:00", "fetched": "2026-03-15T19:20:00+08:00",
+      "body": "公司关注到网络传闻称公司将以约30亿元收购星河半导体100%股权。经核实，公司未就收购星河半导体100%股权与任何方进行洽谈，传闻所述30亿元对价不属实。",
+      "claims": [
+        { "id": "c-deny", "quote": "公司未就收购星河半导体100%股权与任何方进行洽谈，传闻所述30亿元对价不属实", "category": "fact", "content": "公司否认洽谈100%股权及30亿元对价" }
+      ]
+    },
+    {
+      "id": "doc-research", "source": "src-broker", "key": "demo:research:0304", "title": "示例光电点评：外延并购有望加速",
+      "published": "2026-03-04T07:00:00+08:00", "fetched": "2026-04-01T09:00:00+08:00",
+      "body": "我们推测公司或通过外延并购切入半导体环节，星河半导体是潜在标的之一。本报告不构成投资建议。",
+      "claims": [
+        { "id": "c-research", "quote": "我们推测公司或通过外延并购切入半导体环节，星河半导体是潜在标的之一", "category": "speculation", "content": "研报推测星河半导体是潜在并购标的（3月4日发布，4月1日补录）" }
+      ]
+    },
+    {
+      "id": "doc-dividend", "source": "src-issuer-a", "key": "demo:ann:2026-020", "title": "示例光电：2025年度利润分配方案公告",
+      "published": "2026-03-28T18:00:00+08:00", "fetched": "2026-03-28T18:30:00+08:00",
+      "body": "公司拟以总股本为基数，向全体股东每10股派发现金红利3元（含税）。",
+      "claims": [
+        { "id": "c-dividend", "quote": "向全体股东每10股派发现金红利3元（含税）", "category": "fact", "content": "2025年度拟每10股派现3元（含税）", "unit": "元/10股", "basis": "含税" }
+      ]
+    },
+    {
+      "id": "doc-other-co", "source": "src-issuer-m", "key": "demo:ann:m-2026-007", "title": "示例材料：关于投资星河产业园项目的公告",
+      "published": "2026-03-06T18:00:00+08:00", "fetched": "2026-03-06T18:20:00+08:00",
+      "body": "公司拟投资5亿元建设星河产业园项目，主要用于新材料产线。",
+      "claims": [
+        { "id": "c-other-co", "quote": "公司拟投资5亿元建设星河产业园项目", "category": "fact", "content": "示例材料拟投资5亿元建设星河产业园项目", "unit": "元", "basis": "计划投资额" }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "id": "evt-acq", "title": "示例光电收购星河半导体", "type": "acquisition", "subject": "DEMO-A", "matter": "acq:星河半导体",
+      "instruments": [
+        { "code": "DEMO-A", "name": "示例光电（构造）", "link": "direct", "reason": "收购方，公告当事方", "claim": "c-ann-60" },
+        { "code": "DEMO-C", "name": "示例控股（构造）", "link": "indirect", "reason": "构造设定：持有星河半导体35%股权，可能是交易对方之一；未经公告证实", "claim": null }
+      ],
+      "links": [
+        { "id": "e1", "claim": "c-rumor", "relation": "supports", "reason": "传闻首次出现" },
+        { "id": "e2", "claim": "c-news-rumor", "relation": "supports", "target": "c-rumor", "reason": "媒体转述同一传闻，来源链指向股吧帖" },
+        { "id": "e3", "claim": "c-news-opinion", "relation": "supports", "target": "c-rumor", "reason": "评论观点，不构成证据" },
+        { "id": "e4", "claim": "c-ann-60", "relation": "supports", "reason": "当事方提示性公告" },
+        { "id": "e5", "claim": "c-ann-price", "relation": "supports", "reason": "当事方称对价未定；不等于否认传闻" },
+        { "id": "e6", "claim": "c-seller-51", "relation": "refutes", "target": "c-ann-60", "reason": "卖方称比例不符" },
+        { "id": "e7", "claim": "c-ann-51", "relation": "corrects", "target": "c-ann-60", "reason": "更正公告替代原比例" },
+        { "id": "e8", "claim": "c-seller-51", "relation": "supports", "target": "c-ann-51", "reason": "卖方说法与更正后比例一致", "at": "2026-03-12T18:10:00+08:00" },
+        { "id": "e9", "claim": "c-ann-loi", "relation": "supports", "reason": "意向协议及有效期" },
+        { "id": "e10", "claim": "c-deny", "relation": "refutes", "target": "c-rumor", "reason": "当事方澄清否认传闻所述比例与对价" },
+        { "id": "e11", "claim": "c-research", "relation": "supports", "target": "c-rumor", "reason": "研报推测，发布早但补录晚" }
+      ]
+    },
+    {
+      "id": "evt-div", "title": "示例光电2025年度利润分配", "type": "dividend", "subject": "DEMO-A", "matter": "div:2025",
+      "instruments": [{ "code": "DEMO-A", "name": "示例光电（构造）", "link": "direct", "reason": "分红实施主体", "claim": "c-dividend" }],
+      "links": [{ "id": "d1", "claim": "c-dividend", "relation": "supports", "reason": "当事方利润分配公告" }]
+    },
+    {
+      "id": "evt-park", "title": "示例材料投资星河产业园", "type": "investment", "subject": "DEMO-M", "matter": "invest:星河产业园",
+      "instruments": [{ "code": "DEMO-M", "name": "示例材料（构造）", "link": "direct", "reason": "投资主体", "claim": "c-other-co" }],
+      "links": [{ "id": "p1", "claim": "c-other-co", "relation": "supports", "reason": "当事方投资公告" }]
+    }
+  ]
+}
