@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS event_evidence (
   revoked_at TEXT
 );
 CREATE UNIQUE INDEX IF NOT EXISTS event_evidence_active
-  ON event_evidence(event_id, claim_id) WHERE revoked_at IS NULL;
+  ON event_evidence(event_id, claim_id, relation, coalesce(target_claim_id, '')) WHERE revoked_at IS NULL;
 
 CREATE TABLE IF NOT EXISTS event_instruments (
   event_id TEXT NOT NULL REFERENCES events(id),

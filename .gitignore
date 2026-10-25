@@ -17,7 +17,8 @@ test-results/
 credentials.json
 
 # Runtime data, provider payloads and backups
-/data/
+/data/*
+!/data/seed/
 /backups/
 *.db
 *.db-*
