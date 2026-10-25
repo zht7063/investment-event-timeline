@@ -15,7 +15,7 @@ import * as ifind from "./ifind";
 
 const LOCK_STALE_MS = 30 * 60_000;
 /** Bound model cost per run; the rest stay "pending" and can be analyzed from the sources page. */
-const MAX_ANALYZE_PER_RUN = 5;
+const MAX_ANALYZE_PER_RUN = 10;
 
 const lockPath = () => `${process.env.DATABASE_PATH || "./data/app.db"}.sync.lock`;
 
@@ -142,6 +142,21 @@ export async function syncSource(id: string, db = getDb(), opts: { analyze?: boo
       } catch (e) {
         result.errors.push(`${code}《${item.title.slice(0, 30)}》：${(e as Error).message}`);
       }
+    }
+  }
+
+  // Drain existing pending versions from this source within the remaining budget (BUG-2 fix).
+  // Failed versions are intentionally skipped; they can be retried via the UI.
+  if (budget > 0) {
+    const pending = db.prepare(
+      `select v.id from document_versions v join documents d on d.id = v.document_id
+       where d.source_id = ? and v.analysis_status = 'pending'
+       order by v.fetched_at limit ?`,
+    ).all(id, budget) as { id: string }[];
+    for (const row of pending) {
+      budget--;
+      const a = await analyzeVersion(row.id, undefined, db);
+      if (a.ok) result.analyzed++;
     }
   }
 

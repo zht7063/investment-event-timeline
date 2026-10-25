@@ -181,6 +181,71 @@ describe("syncSource", () => {
     }
   });
 
+
+  it("analyzes existing pending versions within budget", async () => {
+    process.env.IFIND_TOKEN = "test";
+    process.env.IFIND_MCP_URL = "https://example.com";
+    process.env.SYNC_CODES = "300308.SZ";
+
+    const original = PROVIDERS.find((p) => p.id === "ifind-notice")!;
+    const originalFetch = original.fetch;
+
+    // First sync adds 3 items but analyze is off, so all stay pending
+    original.fetch = async () => [
+      { title: "Pending A", body: "Body of pending notice A for analysis test.", providerId: "ifind:notice:Pending A", publishedAt: "2026-10-20" },
+      { title: "Pending B", body: "Body of pending notice B for analysis test.", providerId: "ifind:notice:Pending B", publishedAt: "2026-10-21" },
+      { title: "Pending C", body: "Body of pending notice C for analysis test.", providerId: "ifind:notice:Pending C", publishedAt: "2026-10-22" },
+    ];
+
+    try {
+      registerProviders(db);
+      await syncSource("ifind-notice", db, { analyze: false });
+      const pending = db.prepare("select count(*) as n from document_versions where analysis_status = 'pending'").get() as { n: number };
+      expect(pending.n).toBe(3);
+
+      // Second sync: same items are duplicates, but pending versions should be attempted.
+      // Without AI env vars, analysis fails, but the point is they are no longer pending.
+      const r2 = await syncSource("ifind-notice", db);
+      expect(r2.duplicates).toBe(3);
+      expect(r2.added).toBe(0);
+      const stillPending = db.prepare("select count(*) as n from document_versions where analysis_status = 'pending'").get() as { n: number };
+      // All 3 pending versions should have been attempted (now failed due to no AI config)
+      expect(stillPending.n).toBe(0);
+      const attempted = db.prepare("select count(*) as n from document_versions where analysis_status = 'failed'").get() as { n: number };
+      expect(attempted.n).toBe(3);
+    } finally {
+      original.fetch = originalFetch;
+    }
+  });
+
+  it("does not auto-retry failed versions during sync", async () => {
+    process.env.IFIND_TOKEN = "test";
+    process.env.IFIND_MCP_URL = "https://example.com";
+    process.env.SYNC_CODES = "300308.SZ";
+
+    const original = PROVIDERS.find((p) => p.id === "ifind-notice")!;
+    const originalFetch = original.fetch;
+
+    original.fetch = async () => [
+      { title: "Will Fail", body: "Body of a notice that will fail analysis.", providerId: "ifind:notice:Will Fail", publishedAt: "2026-10-20" },
+    ];
+
+    try {
+      registerProviders(db);
+      // First sync adds and tries to analyze; mark it as failed manually
+      await syncSource("ifind-notice", db, { analyze: false });
+      db.prepare("update document_versions set analysis_status = 'failed', analysis_error = 'AI_UPSTREAM' where analysis_status = 'pending'").run();
+
+      // Second sync: item is duplicate, failed version should NOT be retried
+      const r2 = await syncSource("ifind-notice", db);
+      expect(r2.analyzed).toBe(0);
+      const failed = db.prepare("select count(*) as n from document_versions where analysis_status = 'failed'").get() as { n: number };
+      expect(failed.n).toBe(1); // still failed, not retried
+    } finally {
+      original.fetch = originalFetch;
+    }
+  });
+
   it("throws on unknown source id", async () => {
     await expect(syncSource("nonexistent", db)).rejects.toThrow(/unknown source/);
   });
