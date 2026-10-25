@@ -45,6 +45,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
         {(q || status) && <Link href="/">清除条件</Link>}
       </form>
 
+      <p><Link href="/research">输入股票代码与日期，开始自动研究 →</Link></p>
       <EventList items={items} total={total} filtered={Boolean(q || status)} />
     </>
   );

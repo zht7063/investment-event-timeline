@@ -1,0 +1,11 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["src/app/research"],
+  "locale": "zh-CN",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Date", "Form", "Scrollbar", "Toast", "CRUD"],
+  "ownership": { "Date": "native", "Select/Listbox": "native" },
+  "requiredCommands": ["unit", "typecheck", "build", "e2e"],
+  "commands": { "unit": "npm test -- --maxWorkers=1", "typecheck": "npm run typecheck", "build": "npm run build", "e2e": "npm run test:e2e" },
+  "evidence": { "crudFullFlow": "tests/e2e/research.test.ts", "failurePaths": "tests/integration/research.test.ts" }
+}

@@ -246,3 +246,39 @@ legend { font: 600 0.8rem var(--sans); letter-spacing: 0.2em; color: var(--accen
 .market-price-card { padding: 0.5rem 0.8rem; border: 1px solid var(--line); background: var(--card); font: 0.85rem var(--mono); }
 .price-up { color: var(--s-supported); margin-left: 0.4rem; }
 .price-down { color: var(--s-denied); margin-left: 0.4rem; }
+
+/* Shared scrollbar baseline; the document remains the scroll owner. */
+:root { --scroll-thumb: var(--muted); --scroll-track: var(--paper-2); --scroll-hover: var(--ink); --scroll-active: var(--accent); scrollbar-color: var(--scroll-thumb) var(--scroll-track); scrollbar-gutter: stable; }
+* { scrollbar-width: auto; }
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--scroll-track); }
+::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border: 3px solid var(--scroll-track); border-radius: 6px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
+::-webkit-scrollbar-thumb:active { background: var(--scroll-active); }
+@media (forced-colors: active) { :root { scrollbar-color: auto; } }
+.research-form { max-width: 680px; margin-block: 1rem; }
+.research-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.research-dates { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .75rem; }
+.field-error { color: var(--s-denied); font-family: var(--sans); font-size: .85rem; overflow-wrap: anywhere; }
+.research-form .field-error { min-height: 1.5em; }
+.research-submit { min-width: 9em; }
+.research-progress { padding: 1rem; border-block: 2px solid var(--ink); background: var(--paper-2); }
+.research-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; font-family: var(--sans); }
+.research-sources { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.research-sources li { padding: .8rem; background: var(--card); border: 1px solid var(--line); min-width: 0; }
+.research-event { padding: 1rem; border: 1px solid var(--line); background: var(--card); margin-block: 1rem; overflow-wrap: anywhere; }
+.research-event h3 { font-size: 1.25rem; }
+.research-event blockquote { margin: .5rem 0; padding-left: 1rem; border-left: 3px solid var(--accent); white-space: pre-wrap; }
+.research-citations { display: inline-flex; flex-wrap: wrap; gap: .5rem; font: .8rem var(--sans); }
+.research-evidence { padding-left: 1.25rem; }
+.research-evidence li { padding-block: .6rem; border-bottom: 1px solid var(--line); scroll-margin-top: 1rem; }
+.research-document { padding: .8rem 0; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; }
+.research-body { white-space: pre-wrap; }
+summary { cursor: pointer; }
+summary:hover { color: var(--accent); }
+a:hover { text-decoration-thickness: 2px; }
+a, summary { cursor: pointer; }
+button:active:not(:disabled) { filter: brightness(.9); }
+.hero small { font: .5em var(--mono); }
+@media (max-width: 650px) { .research-sources, .research-dates { grid-template-columns: 1fr; } .masthead nav { gap: .8rem; flex-wrap: wrap; } }
+.research-field { display: grid; gap: .25rem; }

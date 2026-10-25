@@ -110,3 +110,20 @@ E2E_BASE_URL=http://服务器IP:3000 npm run test:e2e -- tests/e2e/smoke.test.ts
 ```
 
 完整导入/归并回归使用默认本地临时数据库：`npm run build && npm run test:e2e -- --workers=1`。
+
+## 股票区间研究 worker
+
+新版 Compose 新增 `research` 服务，与网页共用 `app-data` 卷；`sync` 是旧版预设标的同步，两者用途不同。更新镜像后执行 `docker compose up -d --build` 会创建研究 worker。访问 `/research` 查询任意有效 A 股代码，不需要修改 `SYNC_CODES`。
+
+```bash
+docker compose ps
+docker compose logs --tail=100 research
+```
+
+必须配置 `FUYAO_API_KEY`、`FUYAO_MCP_META_URL` 用于名称核验，资讯及模型凭证沿用 `.local.env`。新增研究表由应用启动时增量创建，不删除原有数据；更新前仍应做在线备份。
+
+直跑或 systemd 部署需额外守护 `npm run research:worker`（工作目录同应用、Node 24+、相同 `.env` 和数据库）。只运行 `npm start` 时任务会留在队列，不会自动抓取。旧 `deploy/setup.sh` 尚只安装网页与预设同步，本轮推荐使用 Compose。
+
+默认每来源扶摇100页、iFinD64个日窗口。达到上限显示“覆盖受限”；“重试未完成部分”只处理失败任务，“继续检索更多资料”为仍有断点的来源增加100次检索额度。参数见 `RESEARCH_MAX_NEWS_PAGES`、`RESEARCH_MAX_SEARCH_WINDOWS`。
+
+本轮没有启用生产访问控制、自动订阅或报告历史比较；这些属于方案 D/E 阶段。研究资料独立于演示数据，演示重置不会删除研究资料。

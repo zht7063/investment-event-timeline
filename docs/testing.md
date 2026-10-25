@@ -111,3 +111,8 @@ npm run test:e2e
 - `E2E_BASE_URL=http://127.0.0.1:13100 npm run test:e2e -- tests/e2e/smoke.test.ts --workers=1`：7/7。该端口为 SSH 转发到测试服务器 Caddy 的验收入口。
 - 公网 `http://38.246.253.190/api/health` 经物理网卡访问返回 200；默认透明代理路径曾出现连接重置，不能将该网络失败解释为浏览器功能缺陷。
 - 三个真实数据源同步、真实公告模型抽取/关联/撤销/历史回看、管理失败重试、容器重建持久化、备份恢复均完成验证，详见 `release-readiness.md`。
+
+
+## 股票区间自动研究
+
+本轮 A/B/C 的真实探测、自动化回归、浏览器和恢复验证见 [research-acceptance.md](research-acceptance.md)。新研究测试随 `npm test` / `npm run test:e2e` 执行。

@@ -32,5 +32,15 @@ services:
     healthcheck:
       disable: true
 
+  research:
+    <<: *app
+    depends_on:
+      web:
+        condition: service_healthy
+    init: true
+    command: ["node", "--import", "tsx", "scripts/research-worker.ts"]
+    healthcheck:
+      disable: true
+
 volumes:
   app-data:

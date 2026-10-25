@@ -113,3 +113,74 @@ CREATE TABLE IF NOT EXISTS sync_runs (
   duplicates INTEGER NOT NULL DEFAULT 0,
   error TEXT
 );
+
+-- On-demand research uses immutable material snapshots, independent of demo reset/manual review.
+CREATE TABLE IF NOT EXISTS research_jobs (
+  id TEXT PRIMARY KEY,
+  request_key TEXT NOT NULL UNIQUE,
+  code TEXT NOT NULL,
+  name TEXT,
+  start_day TEXT NOT NULL,
+  end_day TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('queued','running','completed','partial','failed','cancelled')),
+  phase TEXT NOT NULL DEFAULT 'resolve',
+  error TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  lease_token TEXT,
+  lease_until TEXT
+);
+CREATE INDEX IF NOT EXISTS research_queue ON research_jobs(status, lease_until, created_at);
+CREATE TABLE IF NOT EXISTS research_source_runs (
+  job_id TEXT NOT NULL REFERENCES research_jobs(id),
+  source_id TEXT NOT NULL,
+  status TEXT NOT NULL,
+  state TEXT NOT NULL,
+  error TEXT,
+  PRIMARY KEY(job_id, source_id)
+);
+CREATE TABLE IF NOT EXISTS research_materials (
+  id TEXT PRIMARY KEY,
+  provider_key TEXT NOT NULL,
+  content_hash TEXT NOT NULL,
+  source_id TEXT NOT NULL,
+  publisher TEXT NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  url TEXT,
+  published_at TEXT,
+  fetched_at TEXT NOT NULL,
+  content_kind TEXT NOT NULL,
+  UNIQUE(provider_key, content_hash)
+);
+CREATE TABLE IF NOT EXISTS research_documents (
+  job_id TEXT NOT NULL REFERENCES research_jobs(id),
+  material_id TEXT NOT NULL REFERENCES research_materials(id),
+  range_status TEXT NOT NULL CHECK(range_status IN ('inside','unknown')),
+  analysis_status TEXT NOT NULL DEFAULT 'pending' CHECK(analysis_status IN ('pending','done','failed','excluded')),
+  analysis TEXT,
+  error TEXT,
+  PRIMARY KEY(job_id, material_id)
+);
+CREATE TABLE IF NOT EXISTS research_analysis_cache (
+  material_id TEXT NOT NULL REFERENCES research_materials(id),
+  code TEXT NOT NULL,
+  analysis_version TEXT NOT NULL,
+  analysis TEXT NOT NULL,
+  PRIMARY KEY(material_id, code, analysis_version)
+);
+CREATE TABLE IF NOT EXISTS research_reports (
+  job_id TEXT PRIMARY KEY REFERENCES research_jobs(id),
+  revision INTEGER NOT NULL,
+  generated_at TEXT NOT NULL,
+  body TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS research_relations (
+  job_id TEXT NOT NULL REFERENCES research_jobs(id),
+  group_id TEXT NOT NULL,
+  fingerprint TEXT NOT NULL,
+  status TEXT NOT NULL,
+  result TEXT,
+  error TEXT,
+  PRIMARY KEY(job_id, group_id)
+);

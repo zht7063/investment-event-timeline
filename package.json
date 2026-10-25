@@ -14,7 +14,9 @@
     "test": "vitest run",
     "sync": "node --env-file-if-exists=.env --import tsx scripts/sync.ts",
     "backup": "node --env-file-if-exists=.env --import tsx scripts/backup.ts",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "research:worker": "node --env-file-if-exists=.env --import tsx scripts/research-worker.ts",
+    "research:probe": "node --env-file-if-exists=.env --import tsx scripts/research-probe.ts"
   },
   "dependencies": {
     "next": "16.4.3",
